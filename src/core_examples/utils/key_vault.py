@@ -1,4 +1,7 @@
+from functools import lru_cache
 import os
+
+from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 
@@ -14,7 +17,17 @@ def _to_keyvault_name(name: str) -> str:
     return name.lower().replace("_", "-")
 
 
-def get_secret(secret_name: str) -> str:
+@lru_cache(maxsize=1)
+def _get_secret_client() -> SecretClient:
+    key_vault_name = os.getenv("AZURE_KEY_VAULT_NAME")
+    if not key_vault_name:
+        raise EnvironmentError("AZURE_KEY_VAULT_NAME environment variable is not set")
+
+    key_vault_uri = f"https://{key_vault_name}.vault.azure.net"
+    return SecretClient(vault_url=key_vault_uri, credential=DefaultAzureCredential())
+
+
+def get_secret(secret_name: str, *, required: bool = True) -> str | None:
     """
     Retrieve a secret value using a dual-source strategy:
     1. First attempts to read from environment variables.
@@ -26,10 +39,15 @@ def get_secret(secret_name: str) -> str:
         secret_name (str):
             The name of the secret in environment variable format
             (e.g., 'AZURE_CLIENT_SECRET').
+        required (bool):
+            When ``True`` the lookup raises if the secret does not exist.
+            When ``False`` a missing secret resolves to ``None`` so callers can
+            fall back to managed identity or another default mechanism.
 
     Returns:
-        str:
-            The secret value.
+        str | None:
+            The secret value, or ``None`` when ``required=False`` and the
+            secret is intentionally absent.
 
     Raises:
         EnvironmentError:
@@ -63,24 +81,19 @@ def get_secret(secret_name: str) -> str:
     if secret_value := os.getenv(secret_name):
         return secret_value
 
-    # Retrieve Key Vault configuration
-    key_vault_name = os.getenv("AZURE_KEY_VAULT_NAME")
-    if not key_vault_name:
-        raise EnvironmentError("AZURE_KEY_VAULT_NAME environment variable is not set")
-
-    key_vault_uri = f"https://{key_vault_name}.vault.azure.net"
-
-    # Authenticate and create client
-    credential = DefaultAzureCredential()
-    client = SecretClient(vault_url=key_vault_uri, credential=credential)
-
-    # Convert name for Key Vault lookup
+    client = _get_secret_client()
     kv_secret_name = _to_keyvault_name(secret_name)
 
     try:
         secret = client.get_secret(kv_secret_name)
         return secret.value
-    except Exception as e:
+    except ResourceNotFoundError as exc:
+        if not required:
+            return None
         raise RuntimeError(
-            f"Error retrieving secret '{secret_name}' (mapped to '{kv_secret_name}'): {str(e)}"
-        ) from e
+            f"Error retrieving secret '{secret_name}' (mapped to '{kv_secret_name}'): {str(exc)}"
+        ) from exc
+    except Exception as exc:
+        raise RuntimeError(
+            f"Error retrieving secret '{secret_name}' (mapped to '{kv_secret_name}'): {str(exc)}"
+        ) from exc
