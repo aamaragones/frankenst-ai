@@ -7,7 +7,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.types import Command
 
-from core_examples.utils.config_loader import _read_text_resource, load_node_registry, read_yaml
+from core_examples.utils.config_loader import _read_text_resource
 
 
 def resolve_package_resource(package: str, *relative_parts: str) -> Traversable:
