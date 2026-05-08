@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Lock
@@ -14,6 +15,9 @@ from core_examples.constants import CONFIG_FILE_PATH
 from core_examples.utils.config_loader import read_yaml
 from core_examples.utils.key_vault import get_secret
 from core_examples.utils.ollama.ollama_wsl_proxy import resolve_ollama_base_url
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -61,6 +65,10 @@ class LLMServices:
 	def _load_config(cls, config: dict[str, Any] | None = None) -> dict[str, Any]:
 		"""Load the central config and validate the launch selector section."""
 
+		logger.info(
+			"Loading LLM runtime configuration from %s.",
+			"provided config" if config is not None else CONFIG_FILE_PATH,
+		)
 		resolved_config = config if config is not None else read_yaml(CONFIG_FILE_PATH)
 		launch_config = resolved_config.get("launch")
 		if not isinstance(launch_config, dict):
@@ -139,6 +147,10 @@ class LLMServices:
 
 		This method intentionally validates only the local config contract and
 		leaves deeper client validation to `langchain_azure_ai`.
+
+		Azure AI Foundry's OpenAI-compatible wrapper enables Responses API by
+		default, but not every Azure region supports it yet. Default to classic
+		chat completions unless the repo config explicitly opts back in.
 		"""
 
 		kwargs = cls._resolve_runtime_kwargs(runtime_config)
@@ -151,11 +163,25 @@ class LLMServices:
 		if not kwargs.get("model"):
 			raise RuntimeError(f"Missing config entry for: {config_path}.model")
 
-		if kwargs.get("project_endpoint") is None and not kwargs.get("api_version"):
-			raise RuntimeError(f"Missing config entry for: {config_path}.api_version")
+		# NOTE: use_responses_api false for AzureAI chat models since not all regions support it yet
+		if config_path.endswith(".model"):
+			kwargs.setdefault("use_responses_api", False)
 
 		if not kwargs.get("credential"):
 			kwargs["credential"] = DefaultAzureCredential()
+
+		credential = kwargs.get("credential")
+		credential_type = type(credential).__name__ if credential is not None and not isinstance(credential, str) else credential if isinstance(credential, str) else None
+		logger.info(
+			"Preparing AzureAI runtime for %s: model=%s project_endpoint=%s endpoint=%s api_version=%s use_responses_api=%s credential_type=%s",
+			config_path,
+			kwargs.get("model"),
+			kwargs.get("project_endpoint"),
+			kwargs.get("endpoint"),
+			kwargs.get("api_version"),
+			kwargs.get("use_responses_api"),
+			credential_type,
+		)
 
 		return kwargs
 
@@ -163,39 +189,70 @@ class LLMServices:
 	def _load_ollama_model(cls, config: dict[str, Any]) -> BaseChatModel:
 		runtime_config = cls._require(config, "ollama.model", as_section=True)
 		kwargs = cls._prepare_ollama_kwargs(runtime_config, "ollama.model")
-		return ChatOllama(**kwargs)
+		logger.info("Creating Ollama chat runtime for model '%s'.", kwargs.get("model"))
+		model = ChatOllama(**kwargs)
+		logger.info("Loaded Ollama chat runtime '%s'.", type(model).__name__)
+		return model
 
 	@classmethod
 	def _load_ollama_embeddings(cls, config: dict[str, Any]) -> Embeddings:
 		runtime_config = cls._require(config, "ollama.embeddings", as_section=True)
 		kwargs = cls._prepare_ollama_kwargs(runtime_config, "ollama.embeddings")
-		return OllamaEmbeddings(**kwargs)
+		logger.info("Creating Ollama embeddings runtime for model '%s'.", kwargs.get("model"))
+		embeddings = OllamaEmbeddings(**kwargs)
+		logger.info("Loaded Ollama embeddings runtime '%s'.", type(embeddings).__name__)
+		return embeddings
 
 	@classmethod
 	def _load_azureai_model(cls, config: dict[str, Any]) -> BaseChatModel:
 		runtime_config = cls._require(config, "azureai.model", as_section=True)
 		kwargs = cls._prepare_azureai_kwargs(runtime_config, "azureai.model")
-		return AzureAIOpenAIApiChatModel(**kwargs)
+		model = AzureAIOpenAIApiChatModel(**kwargs)
+		logger.info(
+			"Loaded AzureAI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s",
+			"azureai.model",
+			type(model).__name__,
+			getattr(model, "model", kwargs.get("model")),
+			type(getattr(model, "client", None)).__name__ if getattr(model, "client", None) is not None else None,
+			type(getattr(model, "async_client", None)).__name__ if getattr(model, "async_client", None) is not None else None,
+		)
+		return model
 
 	@classmethod
 	def _load_azureai_embeddings(cls, config: dict[str, Any]) -> Embeddings:
 		runtime_config = cls._require(config, "azureai.embeddings", as_section=True)
 		kwargs = cls._prepare_azureai_kwargs(runtime_config, "azureai.embeddings")
-		return AzureAIOpenAIApiEmbeddingsModel(**kwargs)
+		embeddings = AzureAIOpenAIApiEmbeddingsModel(**kwargs)
+		logger.info(
+			"Loaded AzureAI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s has_embed_query=%s",
+			"azureai.embeddings",
+			type(embeddings).__name__,
+			getattr(embeddings, "model", kwargs.get("model")),
+			type(getattr(embeddings, "client", None)).__name__ if getattr(embeddings, "client", None) is not None else None,
+			type(getattr(embeddings, "async_client", None)).__name__ if getattr(embeddings, "async_client", None) is not None else None,
+			hasattr(embeddings, "embed_query"),
+		)
+		return embeddings
 
 	@classmethod
 	def _load_model(cls, config: dict[str, Any], provider_name: str) -> BaseChatModel:
+		logger.info("Resolving chat model provider '%s'.", provider_name)
 		loader = cls._model_providers().get(provider_name)
 		if loader is None:
 			raise ValueError(f"Unsupported provider type: {provider_name}")
-		return loader(config)
+		model = loader(config)
+		logger.info("Chat model provider '%s' loaded runtime '%s'.", provider_name, type(model).__name__)
+		return model
 
 	@classmethod
 	def _load_embeddings(cls, config: dict[str, Any], provider_name: str) -> Embeddings:
+		logger.info("Resolving embeddings provider '%s'.", provider_name)
 		loader = cls._embeddings_providers().get(provider_name)
 		if loader is None:
 			raise ValueError(f"Unsupported provider type: {provider_name}")
-		return loader(config)
+		embeddings = loader(config)
+		logger.info("Embeddings provider '%s' loaded runtime '%s'.", provider_name, type(embeddings).__name__)
+		return embeddings
 
 	@classmethod
 	def _current_runtime(cls) -> LLMRuntime | None:
@@ -213,8 +270,19 @@ class LLMServices:
 		resolved_config = cls._load_config(config)
 		model_provider = cls._require(resolved_config, "launch.model")
 		embeddings_provider = cls._require(resolved_config, "launch.embeddings")
+		logger.info(
+			"Building LLM runtime with providers model=%s embeddings=%s.",
+			model_provider,
+			embeddings_provider,
+		)
 		model = cls._load_model(resolved_config, model_provider)
 		embeddings = cls._load_embeddings(resolved_config, embeddings_provider)
+		logger.info(
+			"Built LLM runtime successfully: model_class=%s embeddings_class=%s turbo_model=%s.",
+			type(model).__name__,
+			type(embeddings).__name__,
+			None,
+		)
 		return LLMRuntime(model, embeddings, None)
 
 	@classmethod
@@ -225,17 +293,45 @@ class LLMServices:
 		Pass `force_reload=True` to rebuild the published runtime.
 		"""
 
+		logger.info(
+			"LLMServices.launch requested: force_reload=%s has_cached_model=%s has_cached_embeddings=%s.",
+			force_reload,
+			cls.model is not None,
+			cls.embeddings is not None,
+		)
 		current_runtime = None if force_reload else cls._current_runtime()
 		if current_runtime is not None:
+			logger.info(
+				"LLMServices.launch reusing cached runtime: model_class=%s embeddings_class=%s.",
+				type(current_runtime.model).__name__,
+				type(current_runtime.embeddings).__name__,
+			)
 			return current_runtime
 
+		logger.info("LLMServices.launch acquiring runtime initialization lock.")
 		with cls._launch_lock:
 			current_runtime = None if force_reload else cls._current_runtime()
 			if current_runtime is not None:
+				logger.info(
+					"LLMServices.launch found cached runtime after lock acquisition: model_class=%s embeddings_class=%s.",
+					type(current_runtime.model).__name__,
+					type(current_runtime.embeddings).__name__,
+				)
 				return current_runtime
 
-			runtime = cls.build_runtime(config)
+			logger.info("LLMServices.launch initializing a new shared runtime.")
+			try:
+				runtime = cls.build_runtime(config)
+			except Exception:
+				logger.exception("LLMServices.launch failed while building the shared runtime.")
+				raise
 			cls.model = runtime.model
 			cls.embeddings = runtime.embeddings
 			cls.turbo_model = runtime.turbo_model
+			logger.info(
+				"LLMServices.launch published shared runtime: model_class=%s embeddings_class=%s turbo_model_class=%s.",
+				type(runtime.model).__name__,
+				type(runtime.embeddings).__name__,
+				type(runtime.turbo_model).__name__ if runtime.turbo_model is not None else None,
+			)
 			return runtime
