@@ -49,7 +49,7 @@ class LLMServices:
 
 		return {
 			"ollama": cls._load_ollama_model,
-			"azureai": cls._load_azureai_model,
+			"azure_ai": cls._load_azure_ai_model,
 		}
 
 	@classmethod
@@ -58,7 +58,7 @@ class LLMServices:
 
 		return {
 			"ollama": cls._load_ollama_embeddings,
-			"azureai": cls._load_azureai_embeddings,
+			"azure_ai": cls._load_azure_ai_embeddings,
 		}
 
 	@classmethod
@@ -142,8 +142,8 @@ class LLMServices:
 		return kwargs
 
 	@classmethod
-	def _prepare_azureai_kwargs(cls, runtime_config: dict[str, Any], config_path: str) -> dict[str, Any]:
-		"""Resolve and apply the AzureAI config validation owned by this project.
+	def _prepare_azure_ai_kwargs(cls, runtime_config: dict[str, Any], config_path: str) -> dict[str, Any]:
+		"""Resolve and apply the Azure AI config validation owned by this project.
 
 		This method intentionally validates only the local config contract and
 		leaves deeper client validation to `langchain_azure_ai`.
@@ -163,7 +163,7 @@ class LLMServices:
 		if not kwargs.get("model"):
 			raise RuntimeError(f"Missing config entry for: {config_path}.model")
 
-		# NOTE: use_responses_api false for AzureAI chat models since not all regions support it yet
+		# NOTE: use_responses_api false for Azure AI chat models since not all regions support it yet
 		if config_path.endswith(".model"):
 			kwargs.setdefault("use_responses_api", False)
 
@@ -173,7 +173,7 @@ class LLMServices:
 		credential = kwargs.get("credential")
 		credential_type = type(credential).__name__ if credential is not None and not isinstance(credential, str) else credential if isinstance(credential, str) else None
 		logger.info(
-			"Preparing AzureAI runtime for %s: model=%s project_endpoint=%s endpoint=%s api_version=%s use_responses_api=%s credential_type=%s",
+			"Preparing Azure AI runtime for %s: model=%s project_endpoint=%s endpoint=%s api_version=%s use_responses_api=%s credential_type=%s",
 			config_path,
 			kwargs.get("model"),
 			kwargs.get("project_endpoint"),
@@ -204,13 +204,13 @@ class LLMServices:
 		return embeddings
 
 	@classmethod
-	def _load_azureai_model(cls, config: dict[str, Any]) -> BaseChatModel:
-		runtime_config = cls._require(config, "azureai.model", as_section=True)
-		kwargs = cls._prepare_azureai_kwargs(runtime_config, "azureai.model")
+	def _load_azure_ai_model(cls, config: dict[str, Any]) -> BaseChatModel:
+		runtime_config = cls._require(config, "azure_ai.model", as_section=True)
+		kwargs = cls._prepare_azure_ai_kwargs(runtime_config, "azure_ai.model")
 		model = AzureAIOpenAIApiChatModel(**kwargs)
 		logger.info(
-			"Loaded AzureAI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s",
-			"azureai.model",
+			"Loaded Azure AI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s",
+			"azure_ai.model",
 			type(model).__name__,
 			getattr(model, "model", kwargs.get("model")),
 			type(getattr(model, "client", None)).__name__ if getattr(model, "client", None) is not None else None,
@@ -219,13 +219,13 @@ class LLMServices:
 		return model
 
 	@classmethod
-	def _load_azureai_embeddings(cls, config: dict[str, Any]) -> Embeddings:
-		runtime_config = cls._require(config, "azureai.embeddings", as_section=True)
-		kwargs = cls._prepare_azureai_kwargs(runtime_config, "azureai.embeddings")
+	def _load_azure_ai_embeddings(cls, config: dict[str, Any]) -> Embeddings:
+		runtime_config = cls._require(config, "azure_ai.embeddings", as_section=True)
+		kwargs = cls._prepare_azure_ai_kwargs(runtime_config, "azure_ai.embeddings")
 		embeddings = AzureAIOpenAIApiEmbeddingsModel(**kwargs)
 		logger.info(
-			"Loaded AzureAI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s has_embed_query=%s",
-			"azureai.embeddings",
+			"Loaded Azure AI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s has_embed_query=%s",
+			"azure_ai.embeddings",
 			type(embeddings).__name__,
 			getattr(embeddings, "model", kwargs.get("model")),
 			type(getattr(embeddings, "client", None)).__name__ if getattr(embeddings, "client", None) is not None else None,

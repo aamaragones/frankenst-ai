@@ -13,7 +13,7 @@ ollama:
   embeddings:
     model: embeddinggemma
 
-azureai:
+azure_ai:
   model:
     project_endpoint:
       secret: AZURE_FOUNDRY_PROJECT_ENDPOINT
@@ -32,6 +32,6 @@ azureai:
 
 
 launch:
-  model: ollama # azureai
-  embeddings: ollama # azureai
+  model: ollama # azure_ai
+  embeddings: ollama # azure_ai
   turbo_model: None

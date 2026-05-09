@@ -27,7 +27,7 @@ def test_llmservices_build_runtime_uses_nested_ollama_sections(monkeypatch) -> N
 			"model": {"model": "gemma4:e4b", "temperature": 0},
 			"embeddings": {"model": "embeddinggemma"},
 		},
-		"azureai": {},
+		"azure_ai": {},
 	}
 
 	runtime = llms_module.LLMServices.build_runtime(config)
@@ -39,7 +39,7 @@ def test_llmservices_build_runtime_uses_nested_ollama_sections(monkeypatch) -> N
 	assert runtime.embeddings["kwargs"]["base_url"] == "http://ollama.local"
 
 
-def test_llmservices_build_runtime_resolves_nested_azureai_sections(monkeypatch) -> None:
+def test_llmservices_build_runtime_resolves_nested_azure_ai_sections(monkeypatch) -> None:
 	chat_factory = CaptureFactory()
 	embeddings_factory = CaptureFactory()
 	secret_values = {
@@ -58,9 +58,9 @@ def test_llmservices_build_runtime_resolves_nested_azureai_sections(monkeypatch)
 	monkeypatch.setattr(llms_module, "get_secret", lambda secret_name: secret_values[secret_name])
 
 	config = {
-		"launch": {"model": "azureai", "embeddings": "azureai"},
+		"launch": {"model": "azure_ai", "embeddings": "azure_ai"},
 		"ollama": {},
-		"azureai": {
+		"azure_ai": {
 			"model": {
 				"endpoint": {"secret": "CHAT_ENDPOINT"},
 				"credential": {"secret": "CHAT_CREDENTIAL"},
@@ -86,7 +86,7 @@ def test_llmservices_build_runtime_resolves_nested_azureai_sections(monkeypatch)
 	assert runtime.embeddings["kwargs"]["credential"] == "embed-key"
 
 
-def test_llmservices_azureai_uses_default_credential_without_api_key(monkeypatch) -> None:
+def test_llmservices_azure_ai_uses_default_credential_without_api_key(monkeypatch) -> None:
 	chat_factory = CaptureFactory()
 	embeddings_factory = CaptureFactory()
 
@@ -94,9 +94,9 @@ def test_llmservices_azureai_uses_default_credential_without_api_key(monkeypatch
 	monkeypatch.setattr(llms_module, "AzureAIOpenAIApiEmbeddingsModel", embeddings_factory)
 
 	config = {
-		"launch": {"model": "azureai", "embeddings": "azureai"},
+		"launch": {"model": "azure_ai", "embeddings": "azure_ai"},
 		"ollama": {},
-		"azureai": {
+		"azure_ai": {
 			"model": {
 				"endpoint": "https://chat.example/openai/v1",
 				"model": "gpt-4o-mini",
@@ -116,14 +116,14 @@ def test_llmservices_azureai_uses_default_credential_without_api_key(monkeypatch
 	assert isinstance(runtime.embeddings["kwargs"]["credential"], DefaultAzureCredential)
 
 
-def test_llmservices_azureai_requires_explicit_runtime_sections() -> None:
+def test_llmservices_azure_ai_requires_explicit_runtime_sections() -> None:
 	config = {
-		"launch": {"model": "azureai", "embeddings": "azureai"},
+		"launch": {"model": "azure_ai", "embeddings": "azure_ai"},
 		"ollama": {},
-		"azureai": {},
+		"azure_ai": {},
 	}
 
-	with pytest.raises(RuntimeError, match="Missing config section for: azureai.model"):
+	with pytest.raises(RuntimeError, match="Missing config section for: azure_ai.model"):
 		llms_module.LLMServices.build_runtime(config)
 
 
@@ -141,7 +141,7 @@ def test_llmservices_reuses_provider_registry_for_model_and_embeddings(monkeypat
 			"model": {"model": "gemma4:e4b"},
 			"embeddings": {"model": "embeddinggemma"},
 		},
-		"azureai": {},
+		"azure_ai": {},
 	}
 
 	runtime = llms_module.LLMServices.build_runtime(config)
@@ -154,7 +154,7 @@ def test_llmservices_rejects_unsupported_provider_from_central_registry() -> Non
 	config = {
 		"launch": {"model": "azureopenai", "embeddings": "azureopenai"},
 		"ollama": {},
-		"azureai": {},
+		"azure_ai": {},
 	}
 
 	with pytest.raises(ValueError, match="Unsupported provider type: azureopenai"):
