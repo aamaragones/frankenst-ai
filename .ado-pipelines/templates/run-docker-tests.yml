@@ -1,0 +1,155 @@
+parameters:
+  - name: capability
+    type: string
+    displayName: Requested agent capability
+  - name: docker_image
+    type: string
+    default: 'python:3.12-slim'
+    displayName: Docker image used when no test Dockerfile is provided
+  - name: test_dockerfile
+    type: string
+    default: ''
+    displayName: Optional Dockerfile path for the test runner image relative to the repo root
+  - name: test_build_context
+    type: string
+    default: '.'
+    displayName: Docker build context for the optional test runner image
+  - name: test_build_args
+    type: object
+    default: {}
+    displayName: Docker build arguments for the optional test runner image
+  - name: project_directory
+    type: string
+    default: '.'
+    displayName: Project directory mounted inside the container
+  - name: requirements_path
+    type: string
+    default: 'requirements.txt'
+    displayName: Path to requirements.txt relative to project directory
+  - name: pytest_target
+    type: string
+    default: 'tests'
+    displayName: Pytest target path
+  - name: pytest_mark_expression
+    type: string
+    default: 'unit or integration'
+    displayName: Pytest marker expression
+  - name: coverage_target
+    type: string
+    default: 'src'
+    displayName: Coverage target path
+  - name: report_directory
+    type: string
+    default: 'pytest_reports/docker-tests'
+    displayName: Directory under Agent.TempDirectory where test reports will be generated
+  - name: extra_pip_packages
+    type: string
+    default: 'pytest-cov'
+    displayName: Extra pip packages installed only for the CI run
+  - name: env_variables
+    type: object
+    default: {}
+    displayName: Additional environment variables passed to the container
+
+jobs:
+  - job: RunDockerTests
+    displayName: Run Docker Tests
+    pool:
+      name: ${{ parameters.capability }}
+    steps:
+      - checkout: self
+        clean: true
+
+      - script: |
+          set -euo pipefail
+
+          PROJECT_DIR="$(Build.SourcesDirectory)/${{ parameters.project_directory }}"
+          REPORT_DIR="$(Agent.TempDirectory)/${{ parameters.report_directory }}"
+          RUNNER_IMAGE="${{ parameters.docker_image }}"
+          TEST_RUNNER_IMAGE=""
+
+          rm -rf "$REPORT_DIR"
+          mkdir -p "$REPORT_DIR"
+
+          BUILD_DOCKER_ARGS=()
+          while IFS='=' read -r env_var value; do
+            arg_key="${env_var#DOCKER_TEST_BUILD_ARG_}"
+            BUILD_DOCKER_ARGS+=(--build-arg "${arg_key}=${value}")
+          done < <(env | awk -F= '/^DOCKER_TEST_BUILD_ARG_/ { print $0 }' | sort)
+
+          if [ -n "${{ parameters.test_dockerfile }}" ]; then
+            TEST_RUNNER_IMAGE="docker-test-runner-$(Build.BuildId)"
+            TEST_DOCKERFILE="$(Build.SourcesDirectory)/${{ parameters.test_dockerfile }}"
+            TEST_BUILD_CONTEXT="$(Build.SourcesDirectory)/${{ parameters.test_build_context }}"
+
+            docker build \
+              -f "$TEST_DOCKERFILE" \
+              "${BUILD_DOCKER_ARGS[@]}" \
+              -t "$TEST_RUNNER_IMAGE" \
+              "$TEST_BUILD_CONTEXT"
+
+            RUNNER_IMAGE="$TEST_RUNNER_IMAGE"
+          fi
+
+          cleanup() {
+            if [ -n "$TEST_RUNNER_IMAGE" ]; then
+              docker image rm -f "$TEST_RUNNER_IMAGE" >/dev/null 2>&1 || true
+            fi
+          }
+          trap cleanup EXIT
+
+          DOCKER_ENV_ARGS=()
+          while IFS='=' read -r env_var value; do
+            arg_key="${env_var#DOCKER_TEST_ENV_}"
+            DOCKER_ENV_ARGS+=("-e" "${arg_key}=${value}")
+          done < <(env | awk -F= '/^DOCKER_TEST_ENV_/ { print $0 }' | sort)
+
+          docker run --rm \
+            -v "$PROJECT_DIR:/workspace:ro" \
+            -v "$REPORT_DIR:/test-results" \
+            -w /workspace \
+            -e PYTHONPATH="/workspace:/workspace/src" \
+            -e PIP_ROOT_USER_ACTION=ignore \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e COVERAGE_FILE=/test-results/.coverage \
+            "${DOCKER_ENV_ARGS[@]}" \
+            "$RUNNER_IMAGE" \
+            /bin/bash -lc '
+              set -euo pipefail
+              mkdir -p /tmp/pytest-cache
+              python -m pip install --upgrade pip
+              pip install -r "${{ parameters.requirements_path }}"
+              if [ -n "${{ parameters.extra_pip_packages }}" ]; then
+                pip install ${{ parameters.extra_pip_packages }}
+              fi
+              python -m pytest ${{ parameters.pytest_target }} \
+                -m "${{ parameters.pytest_mark_expression }}" \
+                -o cache_dir=/tmp/pytest-cache \
+                --junitxml=/test-results/junit.xml \
+                --cov=${{ parameters.coverage_target }} \
+                --cov-report=xml:/test-results/coverage.xml \
+                --cov-report=term-missing \
+                -v
+            '
+        displayName: Execute test suite in Docker
+        env:
+          ${{ each arg in parameters.test_build_args }}:
+            DOCKER_TEST_BUILD_ARG_${{ arg.key }}: ${{ arg.value }}
+          ${{ each var in parameters.env_variables }}:
+            DOCKER_TEST_ENV_${{ var.key }}: ${{ var.value }}
+
+      - task: PublishTestResults@2
+        displayName: Publish Test Results
+        condition: always()
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: '$(Agent.TempDirectory)/${{ parameters.report_directory }}/junit.xml'
+          failTaskOnFailedTests: true
+          testRunTitle: 'Run Docker Tests'
+
+      - task: PublishCodeCoverageResults@2
+        displayName: Publish Code Coverage
+        condition: always()
+        inputs:
+          summaryFileLocation: '$(Agent.TempDirectory)/${{ parameters.report_directory }}/coverage.xml'
+          pathToSources: '$(Build.SourcesDirectory)/${{ parameters.project_directory }}/src'

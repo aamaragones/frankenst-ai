@@ -20,11 +20,24 @@ parameters:
     type: string
 
 jobs:
+  - template: run-docker-tests.yml
+    parameters:
+      capability: ${{ parameters.capability }}
+      project_directory: '.'
+      requirements_path: 'requirements.txt'
+      pytest_target: 'tests'
+      pytest_mark_expression: 'unit or integration'
+      coverage_target: 'src'
+      report_directory: 'pytest_reports/docker-tests'
+
   - job: BuildImage
     displayName: Build and Push Image to ACR
+    dependsOn: RunDockerTests
     pool:
       name: ${{ parameters.capability }}
     steps:
+      - checkout: self
+        clean: true
       - template: install-az-cli.yml
       - template: build-and-push-acr.yml
         parameters:
