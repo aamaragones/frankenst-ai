@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog and the project currently stays in the `0.x`
 phase while the public packaging and repository boundaries continue to mature.
 
+## [0.1.2] - 2026-05-14
+
+### Added
+
+- `uv.lock`, `ruff`, and `mypy` are now part of the repository's standard development flow through `pyproject.toml` dependency groups and tool configuration.
+- A centralized `CoreSettings` layer plus focused path/config tests now cover repository defaults and environment overrides for the `core_examples` reference package.
+- Reusable Azure DevOps test/build templates were expanded for the mono-repo, including a Docker-based test runner flow that mirrors the repository validation sequence.
+
+### Changed
+
+- Repository setup, local development, packaging, and contributor docs now use `uv` as the primary workflow and document `.venv`-first usage in English across the main README, package README, and contributing guide.
+- `WorkflowBuilder` now expects a `GraphLayout` subclass directly, and the reference layouts follow a two-step `build_runtime()` plus `layout()` contract so runtime dependencies are resolved before node and edge declaration.
+- Repository configuration access now goes through `core_examples.config.settings`, replacing the old constants-based path handling for active source and test consumers.
+- `LLMServices` and the Foundry/Azure AI integration layer now align on `azure_ai` naming, support `project_endpoint`-driven configuration, and resolve their shared config path through the centralized settings layer.
+- Packaging and CI inputs are now centered in `pyproject.toml`, with static dependency metadata, `uv`-managed sync/build flows, and updated Docker/Azure pipeline templates for the mono-repo.
+
+### Fixed
+
+- Key Vault, blob storage, RAG helpers, and related Azure service integrations now handle current Foundry/runtime configuration patterns more consistently.
+- Example layouts, output-path utilities, logging bootstrap, and LLM service tests now reflect the settings-based configuration flow and current repository boundaries more accurately.
+
 ## [0.1.1] - 2026-04-22
 
 ### Added
