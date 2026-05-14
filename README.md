@@ -298,7 +298,6 @@ frankenst-ai/
 │   │   │   ├── config.yml            # Main runtime configuration file for the project
 │   │   │   ├── config_nodes.yml      # Node registry used by the example graph layouts
 │   │   │   └── layouts/              # Reference GraphLayout subclasses using build_runtime() + layout()
-│   │   ├── constants/           
 │   │   ├── models/                   # Structural models: StateGraph, tool properties, structured outputs, etc.
 │   │   └── utils/                  
 │   └── frankstate/          # Frankstate utilities for assembling and compiling LangGraph

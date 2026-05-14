@@ -21,7 +21,7 @@ from core_examples.components.tools.get_evolution.get_evolution_tool import (
 from core_examples.components.tools.random_movements.random_movements_tool import (
     RandomMovementsTool,
 )
-from core_examples.constants import CONFIG_NODES_FILE_PATH
+from core_examples.config.settings import get_settings
 from core_examples.utils.config_loader import load_node_registry
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.graph_layout import GraphLayout
@@ -52,6 +52,7 @@ class OakHumanLoopConfigGraph(GraphLayout):
     SENSITIVE_TOOLS: list[BaseTool]
 
     def build_runtime(self) -> dict[str, Any]:
+        settings = get_settings()
         LLMServices.launch()
         if LLMServices.model is None:
             raise RuntimeError("LLMServices.launch() did not initialize model.")
@@ -59,7 +60,7 @@ class OakHumanLoopConfigGraph(GraphLayout):
         dominate_pokemon_tool = DominatePokemonTool()
 
         return {
-            "CONFIG_NODES": load_node_registry(CONFIG_NODES_FILE_PATH),
+            "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
             "OAKLANG_AGENT": OakLangAgent(
                 model=LLMServices.model,
                 tools=[GetEvolutionTool(), RandomMovementsTool(), dominate_pokemon_tool],

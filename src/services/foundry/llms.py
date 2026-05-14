@@ -11,7 +11,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 
-from core_examples.constants import CONFIG_FILE_PATH
+from core_examples.config.settings import get_settings
 from core_examples.utils.config_loader import read_yaml
 from core_examples.utils.key_vault import get_secret
 from core_examples.utils.ollama.ollama_wsl_proxy import resolve_ollama_base_url
@@ -64,11 +64,13 @@ class LLMServices:
 	def _load_config(cls, config: dict[str, Any] | None = None) -> dict[str, Any]:
 		"""Load the central config and validate the launch selector section."""
 
+		settings = get_settings()
+
 		logger.info(
 			"Loading LLM runtime configuration from %s.",
-			"provided config" if config is not None else CONFIG_FILE_PATH,
+			"provided config" if config is not None else settings.config_file_path,
 		)
-		resolved_config = config if config is not None else read_yaml(CONFIG_FILE_PATH)
+		resolved_config = config if config is not None else read_yaml(settings.config_file_path)
 		launch_config = resolved_config.get("launch")
 		if not isinstance(launch_config, dict):
 			raise RuntimeError("Missing config section for: launch")

@@ -29,7 +29,7 @@ from core_examples.components.runnables.rewrite_question.rewrite_question import
 from core_examples.components.runnables.structured_grade_document.structured_grade_document import (
     StructuredGradeDocument,
 )
-from core_examples.constants import CONFIG_NODES_FILE_PATH
+from core_examples.config.settings import get_settings
 from core_examples.models.structured_output.grade_documents import GradeDocuments
 from core_examples.utils.config_loader import load_node_registry
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
@@ -62,6 +62,7 @@ class LocalVectorStoreAdaptiveRAGConfigGraph(GraphLayout):
     REWRITE_CHAIN: RewriteQuestion
 
     def build_runtime(self) -> dict[str, Any]:
+        settings = get_settings()
         LLMServices.launch()
         if LLMServices.model is None or LLMServices.embeddings is None:
             raise RuntimeError("LLMServices.launch() did not initialize model and embeddings.")
@@ -71,7 +72,7 @@ class LocalVectorStoreAdaptiveRAGConfigGraph(GraphLayout):
         ).get_retriever()
 
         return {
-            "CONFIG_NODES": load_node_registry(CONFIG_NODES_FILE_PATH),
+            "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
             "RETRIEVER_CHAIN": MultimodalRetriever(
                 model=LLMServices.model,
                 retriever=raw_retriever,

@@ -70,9 +70,7 @@ def test_configure_logging_creates_a_log_file_when_enabled(tmp_path: Path, monke
     assert "configured log path" in log_path.read_text(encoding="utf-8")
 
 
-def test_default_output_directories_fall_back_when_constants_are_missing(monkeypatch) -> None:
-    monkeypatch.setattr(common_module, "_get_core_constants_module", lambda: None)
-
+def test_default_output_directories_resolve_from_settings() -> None:
     project_root = common_module.get_project_root_path()
 
     assert common_module.get_default_logs_directory() == project_root / "logs"

@@ -28,7 +28,7 @@ from core_examples.components.runnables.rewrite_question.rewrite_question import
 from core_examples.components.runnables.structured_grade_document.structured_grade_document import (
     StructuredGradeDocument,
 )
-from core_examples.constants import CONFIG_NODES_FILE_PATH
+from core_examples.config.settings import get_settings
 from core_examples.models.structured_output.grade_documents import GradeDocuments
 from core_examples.utils.config_loader import load_node_registry
 from core_examples.utils.key_vault import get_secret
@@ -65,6 +65,7 @@ class AISearchAdaptiveRAGConfigGraph(GraphLayout):
     INDEX_NAME = "demo-rag-multimodal-index"
 
     def build_runtime(self) -> dict[str, Any]:
+        settings = get_settings()
         LLMServices.launch()
         if LLMServices.model is None or LLMServices.embeddings is None:
             raise RuntimeError("LLMServices.launch() did not initialize model and embeddings.")
@@ -82,7 +83,7 @@ class AISearchAdaptiveRAGConfigGraph(GraphLayout):
         )
 
         return {
-            "CONFIG_NODES": load_node_registry(CONFIG_NODES_FILE_PATH),
+            "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
             "RAW_RETRIEVER": raw_retriever,
             "GENERARION_CHAIN": MultimodalGeneration(model=LLMServices.model),
             "GRADE_STRUCTURED_CHAIN": StructuredGradeDocument(

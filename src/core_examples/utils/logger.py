@@ -5,9 +5,12 @@ from typing import Any
 
 import yaml
 
-from core_examples.constants import CONFIG_LOGGING_FILE_PATH, DEFAULT_LOG_FILE_PATH
+from core_examples.config.settings import get_settings
 
 _LOGGING_CONFIGURED = False
+_SETTINGS = get_settings()
+CONFIG_LOGGING_FILE_PATH = _SETTINGS.config_logging_file_path
+DEFAULT_LOG_FILE_PATH = _SETTINGS.default_log_file_path
 
 
 def configure_logging(default_level: str = "INFO") -> logging.Logger:

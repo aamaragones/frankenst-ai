@@ -1,4 +1,3 @@
-import inspect
 import logging
 from typing import Any
 
@@ -27,7 +26,7 @@ class WorkflowBuilder:
     
     def __init__(
         self,
-        config: GraphLayout,
+        config: type[GraphLayout],
         state_schema: type[Any],
         checkpointer: BaseCheckpointSaver | None = None,
         input_schema: type[Any] | None = None,
@@ -42,10 +41,14 @@ class WorkflowBuilder:
             input_schema: Optional input schema forwarded to `StateGraph`.
             output_schema: Optional output schema forwarded to `StateGraph`.
         """
-        self.workflow: StateGraph = StateGraph(state_schema=state_schema, input_schema=input_schema, output_schema=output_schema)
+        self.workflow: StateGraph = StateGraph(
+            state_schema=state_schema,
+            input_schema=input_schema,
+            output_schema=output_schema,
+        )
         self.memory: BaseCheckpointSaver | None = checkpointer
 
-        if not (isinstance(config, type) and issubclass(config, GraphLayout)):
+        if not isinstance(config, type) or not issubclass(config, GraphLayout):
             raise TypeError(
                 "WorkflowBuilder expects `config` to be a GraphLayout subclass"
             )
@@ -54,8 +57,11 @@ class WorkflowBuilder:
         self.edge_manager: EdgeManager = EdgeManager()
         self.node_manager: NodeManager = NodeManager()
         self._workflow_configured: bool = False
-        
-        self.logger.info(f"WorkFlowBuilder initialized for GraphLayout {config.__name__}")
+
+        self.logger.info(
+            "WorkflowBuilder initialized for GraphLayout %s",
+            config.__name__,
+        )
 
     def compile(self) -> CompiledStateGraph:
         """Configure nodes and edges declared in the layout, then compile the graph."""

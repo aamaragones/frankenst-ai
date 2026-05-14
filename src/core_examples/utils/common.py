@@ -1,4 +1,4 @@
-from importlib import import_module, resources
+from importlib import resources
 from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
@@ -7,6 +7,7 @@ from langchain_core.runnables.config import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 
+from core_examples.config.settings import get_settings
 from core_examples.utils.config_loader import _read_text_resource
 
 
@@ -19,41 +20,22 @@ def resolve_package_resource(package: str, *relative_parts: str) -> Traversable:
     return resource
 
 
-def _get_core_constants_module():
-    try:
-        return import_module("core_examples.constants")
-    except ImportError:
-        return None
-
-
 def get_project_root_path() -> Path:
-    """Return the configured project root or fall back to the repository root."""
+    """Return the configured project root from settings."""
 
-    fallback = Path(__file__).resolve().parents[3]
-    constants_module = _get_core_constants_module()
-    configured_path = getattr(constants_module, "PROJECT_ROOT_PATH", None) if constants_module else None
-
-    return Path(configured_path).expanduser().resolve() if configured_path else fallback
+    return get_settings().project_root_path.expanduser().resolve()
 
 
 def get_default_artifacts_directory() -> Path:
-    """Return the default artifacts directory, using constants only when available."""
+    """Return the default artifacts directory from settings."""
 
-    project_root_path = get_project_root_path()
-    constants_module = _get_core_constants_module()
-    configured_path = getattr(constants_module, "ARTIFACTS_DIRECTORY_PATH", None) if constants_module else None
-
-    return Path(configured_path).expanduser().resolve() if configured_path else project_root_path / "artifacts"
+    return get_settings().artifacts_directory_path.expanduser().resolve()
 
 
 def get_default_logs_directory() -> Path:
-    """Return the default logs directory, using constants only when available."""
+    """Return the default logs directory from settings."""
 
-    project_root_path = get_project_root_path()
-    constants_module = _get_core_constants_module()
-    configured_path = getattr(constants_module, "LOGS_DIRECTORY_PATH", None) if constants_module else None
-
-    return Path(configured_path).expanduser().resolve() if configured_path else project_root_path / "logs"
+    return get_settings().logs_directory_path.expanduser().resolve()
 
 
 def resolve_configured_path(path_value: str | Path, base_dir: str | Path) -> Path:

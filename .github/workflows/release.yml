@@ -10,7 +10,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-frankstate:
+    name: Validate frankstate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Sync project with development dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Run Ruff for frankstate
+        run: uv run ruff check src/frankstate tests/unit_test/frankstate tests/support/frankstate_doubles
+
+      - name: Run mypy for frankstate
+        run: uv run mypy src/frankstate
+
+      - name: Run Frankstate test suite
+        run: uv run pytest -q tests/unit_test/frankstate
+
   build:
+    needs: validate-frankstate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,10 +87,10 @@ jobs:
           PY
 
       - name: Sync project with development dependencies
-        run: uv sync --frozen --extra examples --group dev
+        run: uv sync --frozen --group dev
 
-      - name: Run test suite
-        run: uv run pytest -q
+      - name: Clean packaging artifacts
+        run: rm -rf build dist src/frankstate.egg-info
 
       - name: Build wheel and sdist
         run: uv build
