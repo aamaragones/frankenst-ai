@@ -4,23 +4,38 @@ from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from langgraph.graph import END, START
 
-from services.foundry.llms import LLMServices
-from frankstate.entity.edge import ConditionalEdge, SimpleEdge
-from frankstate.entity.graph_layout import GraphLayout
-from frankstate.entity.node import SimpleNode
-
-from core_examples.components.retrievers.ai_search_multivector_retriever.ai_search_multivector_retriever import AISearchMultiVectorRetriever
-from core_examples.components.runnables.multimodal_generation.multimodal_generation import MultimodalGeneration
-from core_examples.components.runnables.structured_grade_document.structured_grade_document import StructuredGradeDocument
-from core_examples.components.runnables.rewrite_question.rewrite_question import RewriteQuestion
-from core_examples.components.edges.evaluators.grade_rewrite_generate import GradeRewriteGenerate
-from core_examples.components.nodes.enhancers.generate_answer_ainvoke import GenerateAnswerAsyncInvoke
-from core_examples.components.nodes.enhancers.retrieve_context_ai_search import RetrieveContextAISearch
-from core_examples.components.nodes.enhancers.rewrite_question_ainvoke import RewriteQuestionAsyncInvoke
+from core_examples.components.edges.evaluators.grade_rewrite_generate import (
+    GradeRewriteGenerate,
+)
+from core_examples.components.nodes.enhancers.generate_answer_ainvoke import (
+    GenerateAnswerAsyncInvoke,
+)
+from core_examples.components.nodes.enhancers.retrieve_context_ai_search import (
+    RetrieveContextAISearch,
+)
+from core_examples.components.nodes.enhancers.rewrite_question_ainvoke import (
+    RewriteQuestionAsyncInvoke,
+)
+from core_examples.components.retrievers.ai_search_multivector_retriever.ai_search_multivector_retriever import (
+    AISearchMultiVectorRetriever,
+)
+from core_examples.components.runnables.multimodal_generation.multimodal_generation import (
+    MultimodalGeneration,
+)
+from core_examples.components.runnables.rewrite_question.rewrite_question import (
+    RewriteQuestion,
+)
+from core_examples.components.runnables.structured_grade_document.structured_grade_document import (
+    StructuredGradeDocument,
+)
+from core_examples.constants import CONFIG_NODES_FILE_PATH
 from core_examples.models.structured_output.grade_documents import GradeDocuments
 from core_examples.utils.config_loader import load_node_registry
 from core_examples.utils.key_vault import get_secret
-from core_examples.constants import CONFIG_NODES_FILE_PATH
+from frankstate.entity.edge import ConditionalEdge, SimpleEdge
+from frankstate.entity.graph_layout import GraphLayout
+from frankstate.entity.node import SimpleNode
+from services.foundry.llms import LLMServices
 
 
 # NOTE: This is an example implementation for illustration purposes

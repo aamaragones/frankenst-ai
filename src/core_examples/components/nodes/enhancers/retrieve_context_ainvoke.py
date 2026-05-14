@@ -1,7 +1,10 @@
 from typing import Any, cast
+
+from langchain_core.messages import AIMessage, AnyMessage
 from pydantic import BaseModel
-from langchain_core.messages import AnyMessage, AIMessage
+
 from frankstate.entity.statehandler import StateEnhancer
+
 
 class RetrieveContextAsyncInvoke(StateEnhancer):
     """Retrieve context from the configured runnable retriever.

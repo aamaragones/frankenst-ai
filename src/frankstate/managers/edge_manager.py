@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 
+
 class EdgeManager:
     """Store graph edges and expose them in the format expected by LangGraph.
 
@@ -26,7 +27,7 @@ class EdgeManager:
         edges: SimpleEdge | ConditionalEdge | Iterable[SimpleEdge | ConditionalEdge],
     ) -> list[SimpleEdge | ConditionalEdge]:
         """Return edges as a list while supporting single-edge inputs."""
-        if isinstance(edges, (SimpleEdge, ConditionalEdge)):
+        if isinstance(edges, SimpleEdge | ConditionalEdge):
             return [edges]
 
         return list(edges)
@@ -36,7 +37,7 @@ class EdgeManager:
         Add one or more edges to the registry preserving declaration order.
         """
         for edge in self._normalize_edges(edges):
-            if isinstance(edge, (SimpleEdge, ConditionalEdge)):
+            if isinstance(edge, SimpleEdge | ConditionalEdge):
                 self.edges.append(edge)
             else:
                 raise TypeError(f"Each edge must be a SimpleEdge or ConditionalEdge, got {type(edge)}")
@@ -50,7 +51,7 @@ class EdgeManager:
         """
         if filter_type is None:
             return tuple(self.edges)
-        elif isinstance(filter_type, type) and issubclass(filter_type, (SimpleEdge, ConditionalEdge)):
+        elif isinstance(filter_type, type) and issubclass(filter_type, SimpleEdge | ConditionalEdge):
             return tuple(edge for edge in self.edges if type(edge) is filter_type)
         else:
             raise TypeError(f"Each edge must be a SimpleEdge or ConditionalEdge, expected {type(filter_type)}")

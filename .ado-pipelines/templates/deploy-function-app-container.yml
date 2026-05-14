@@ -19,12 +19,8 @@ jobs:
   - template: run-docker-tests.yml
     parameters:
       capability: ${{ parameters.capability }}
-      project_directory: '.'
-      requirements_path: 'requirements.txt'
-      pytest_target: 'tests'
+      uv_sync_args: '--group dev --extra examples'
       pytest_mark_expression: 'unit or integration'
-      coverage_target: 'src'
-      report_directory: 'pytest_reports/docker-tests'
 
   - job: BuildImage
     displayName: Build and Push Image to ACR
@@ -34,7 +30,7 @@ jobs:
     steps:
       - checkout: self
         clean: true
-      - template: install-az-cli.yml
+      # - template: install-az-cli.yml
       - template: build-and-push-acr.yml
         parameters:
           context_path: '.'
@@ -43,6 +39,7 @@ jobs:
           tag_version: '$(Build.BuildId)'
           build_args:
             AZURE_KEY_VAULT_NAME: '$(azure_key_vault_name)'
+            AZURE_BLOB_STORAGE_NAME: '$(azure_blob_storage_name)'
           service_connection: ${{ parameters.service_connection }}
 
   - deployment: DeployFunctionAppImage

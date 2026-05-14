@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from pydantic import BaseModel
+
 from langchain_core.messages import AnyMessage
 from langchain_core.runnables import Runnable
 from langgraph.types import Command
+from pydantic import BaseModel
+
 from frankstate.entity.runnable_builder import RunnableBuilder
 
 
@@ -121,16 +123,17 @@ class StateCommander(ABC):
         """Return the semantic route map used by CommandNode and LangGraph.
 
         Subclasses may override this property directly, or populate a backing
-        ``_destinations`` attribute from their constructor.
+        `_destinations` attribute from their constructor.
         """
         destinations = getattr(self, "_destinations", None)
-        if isinstance(destinations, dict):
-            return destinations
 
-        raise AttributeError(
-            f"{type(self).__name__} must expose a 'destinations: dict[str, str]' property "
-            "or a '_destinations' attribute populated by the constructor."
-        )
+        if not isinstance(destinations, dict):
+            raise AttributeError(
+                f"{type(self).__name__} must expose a 'destinations: dict[str, str]' property "
+                "or a '_destinations' attribute populated by the constructor."
+            )
+
+        return destinations
 
     @abstractmethod
     def command(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> Command[str]:

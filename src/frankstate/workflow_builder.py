@@ -1,12 +1,15 @@
-import logging
 import inspect
+import logging
 from typing import Any
+
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
+
 from frankstate.entity.graph_layout import GraphLayout
 from frankstate.managers.edge_manager import EdgeManager
 from frankstate.managers.node_manager import NodeManager
-from langgraph.checkpoint.base import BaseCheckpointSaver
+
 
 class WorkflowBuilder:
     """Assemble a LangGraph `StateGraph` from a `GraphLayout` subclass.
@@ -24,7 +27,7 @@ class WorkflowBuilder:
     
     def __init__(
         self,
-        config: type[Any],
+        config: GraphLayout,
         state_schema: type[Any],
         checkpointer: BaseCheckpointSaver | None = None,
         input_schema: type[Any] | None = None,
@@ -42,7 +45,7 @@ class WorkflowBuilder:
         self.workflow: StateGraph = StateGraph(state_schema=state_schema, input_schema=input_schema, output_schema=output_schema)
         self.memory: BaseCheckpointSaver | None = checkpointer
 
-        if not inspect.isclass(config) or not issubclass(config, GraphLayout):
+        if not (isinstance(config, type) and issubclass(config, GraphLayout)):
             raise TypeError(
                 "WorkflowBuilder expects `config` to be a GraphLayout subclass"
             )

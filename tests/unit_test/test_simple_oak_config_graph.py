@@ -3,8 +3,12 @@ import asyncio
 from langchain_core.messages import HumanMessage
 from langgraph.prebuilt import ToolNode
 
-from core_examples.components.edges.evaluators.route_tool_condition import RouteToolCondition
-from core_examples.components.nodes.enhancers.simple_messages_ainvoke import SimpleMessagesAsyncInvoke
+from core_examples.components.edges.evaluators.route_tool_condition import (
+    RouteToolCondition,
+)
+from core_examples.components.nodes.enhancers.simple_messages_ainvoke import (
+    SimpleMessagesAsyncInvoke,
+)
 from core_examples.components.runnables.oaklang_agent.oaklang_agent import OakLangAgent
 from core_examples.config.layouts import simple_oak_config_graph as simple_oak_module
 from core_examples.models.stategraph.stategraph import SharedState

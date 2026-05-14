@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class LangChainToolProperty:
     def __init__(
         self,

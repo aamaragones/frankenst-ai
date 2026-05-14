@@ -13,23 +13,31 @@ Keep those boundaries explicit in pull requests.
 
 ## Local setup
 
-Create and activate a virtual environment, then install the repository in editable mode:
+Use `uv` as the single dependency and environment manager for the repository.
+From the repository root:
 
 ```bash
-python -m venv .venv
+uv venv .venv
 source .venv/bin/activate
-python -m uv pip install -e .[examples,dev]
+uv sync --frozen
+uv sync --frozen --extra examples --group dev
+```
+
+On Windows PowerShell, activate with:
+
+```powershell
+.venv\Scripts\Activate.ps1
 ```
 
 If you prefer repository shortcuts, `make install-dev` wraps the same editable
-install command from the repository root.
+sync flow from the repository root.
 
 ## Tests
 
 Run the test suite from the repository root:
 
 ```bash
-pytest -q
+uv run pytest -q
 ```
 
 Repository shortcuts:
@@ -42,17 +50,17 @@ Use that split when you want to distinguish package changes from mono-repo-only 
 If you touch packaging, also validate the distributions:
 
 ```bash
-python -m build --wheel --sdist --no-isolation
+uv build
 ```
 
-`make build` runs the packaging build and `twine check` validation flow.
+`make build` runs the packaging build and `twine check` validation flow with `uv`.
 
 ## Dependency policy
 
 - `src/frankstate` is a published library, so its runtime dependencies should use compatible version ranges, not exact `==` pins.
 - The runtime floor should reflect versions exercised by the repository test suite.
 - The runtime ceiling should stay conservative around fast-moving dependencies such as LangGraph and LangChain so `frankstate` does not claim untested compatibility.
-- Exact pins or lock-style constraints are appropriate for repository development and CI environments, not for the published core wheel.
+- Exact pins live in `dependency-groups` plus `uv.lock` for repository development and CI environments, not in the published core wheel metadata.
 
 Current core policy:
 

@@ -1,7 +1,10 @@
 from typing import Any, cast
-from pydantic import BaseModel
+
 from langchain_core.messages import AnyMessage
+from pydantic import BaseModel
+
 from frankstate.entity.statehandler import StateEnhancer
+
 
 class GenerateAnswerAsyncInvoke(StateEnhancer):
     """Generate the final answer for the current retrieval iteration.

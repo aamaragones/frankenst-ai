@@ -1,18 +1,21 @@
 import logging
+
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import (
-    ChatPromptTemplate, 
-    FewShotChatMessagePromptTemplate, 
+    ChatPromptTemplate,
     MessagesPlaceholder,
 )
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.language_models.chat_models import BaseChatModel
+
+from core_examples.utils.common import (
+    load_and_clean_text_file,
+    resolve_package_resource,
+)
+from frankstate.entity.runnable_builder import RunnableBuilder
 
 from .history_template import history_template
-from .fewshot_examples import few_shot_examples
 
-from frankstate.entity.runnable_builder import RunnableBuilder
-from core_examples.utils.common import load_and_clean_text_file, resolve_package_resource
 
 class OakLangAgent(RunnableBuilder):
     logger: logging.Logger = logging.getLogger(__name__)

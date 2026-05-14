@@ -3,12 +3,19 @@ import sys
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from core_examples.constants import CONFIG_FILE_PATH
 from core_examples.components.runnables.oaklang_agent.oaklang_agent import OakLangAgent
+from core_examples.components.tools.get_evolution.get_evolution_tool import (
+    GetEvolutionTool,
+)
+from core_examples.components.tools.random_movements.random_movements_tool import (
+    RandomMovementsTool,
+)
+from core_examples.constants import CONFIG_FILE_PATH
+from core_examples.utils.common import (
+    load_and_clean_text_file,
+    resolve_package_resource,
+)
 from core_examples.utils.config_loader import read_yaml
-from core_examples.components.tools.get_evolution.get_evolution_tool import GetEvolutionTool
-from core_examples.components.tools.random_movements.random_movements_tool import RandomMovementsTool
-from core_examples.utils.common import resolve_package_resource, load_and_clean_text_file
 from tests.support.core_doubles import ToolBindingFakeModel
 
 

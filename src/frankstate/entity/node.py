@@ -1,6 +1,7 @@
 from typing import Any
 
-from frankstate.entity.statehandler import StateEnhancer, StateCommander
+from frankstate.entity.statehandler import StateCommander, StateEnhancer
+
 
 class BaseNode:
     """Base named node definition consumed by GraphLayout and NodeManager.

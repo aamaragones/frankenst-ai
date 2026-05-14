@@ -1,9 +1,11 @@
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
-from services.foundry.llms import LLMServices
-from core_examples.components.retrievers.ai_search_simple_semantic_retriever.ai_search_simple_semantic_retriever import AISearchSimpleSemanticRetriever
-from core_examples.utils.key_vault import get_secret
 
+from core_examples.components.retrievers.ai_search_simple_semantic_retriever.ai_search_simple_semantic_retriever import (
+    AISearchSimpleSemanticRetriever,
+)
+from core_examples.utils.key_vault import get_secret
+from services.foundry.llms import LLMServices
 
 INDEX_NAME = "pokeseriex-index"
 

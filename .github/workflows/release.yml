@@ -25,6 +25,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
       - name: Extract release version from tag
         id: meta
         run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
@@ -49,20 +54,17 @@ jobs:
               )
           PY
 
-      - name: Install build tooling
-        run: python -m pip install --upgrade pip build twine pytest uv
-
-      - name: Install project with test dependencies
-        run: python -m uv pip install -e '.[examples, dev]'
+      - name: Sync project with development dependencies
+        run: uv sync --frozen --extra examples --group dev
 
       - name: Run test suite
-        run: pytest -q
+        run: uv run pytest -q
 
       - name: Build wheel and sdist
-        run: python -m build --no-isolation
+        run: uv build
 
       - name: Validate distributions
-        run: python -m twine check dist/*
+        run: uv run twine check dist/*
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7

@@ -7,7 +7,6 @@ import yaml
 
 from core_examples.constants import CONFIG_LOGGING_FILE_PATH, DEFAULT_LOG_FILE_PATH
 
-
 _LOGGING_CONFIGURED = False
 
 

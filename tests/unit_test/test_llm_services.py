@@ -1,5 +1,5 @@
-from azure.identity import DefaultAzureCredential
 import pytest
+from azure.identity import DefaultAzureCredential
 
 from services.foundry import llms as llms_module
 

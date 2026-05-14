@@ -1,4 +1,0 @@
-pytest
-streamlit
-build
-twine

@@ -1,11 +1,14 @@
 from azure.core.credentials import AzureKeyCredential
-from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents import SearchClient
-from services.foundry.llms import LLMServices
-from core_examples.utils.rag.ai_search_unstructured_indexer import AISearchIndexManager, AISearchMultiVectorDocumentIndexer
-from core_examples.utils.key_vault import get_secret
-from core_examples.utils.blob_storage import download_pdf_from_blob, parse_blob_subject
+from azure.search.documents.indexes import SearchIndexClient
 
+from core_examples.utils.blob_storage import download_pdf_from_blob, parse_blob_subject
+from core_examples.utils.key_vault import get_secret
+from core_examples.utils.rag.ai_search_unstructured_indexer import (
+    AISearchIndexManager,
+    AISearchMultiVectorDocumentIndexer,
+)
+from services.foundry.llms import LLMServices
 
 INDEX_NAME = "pokeseriex-index"
 

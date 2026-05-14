@@ -5,17 +5,16 @@ from threading import Lock
 from typing import Any
 
 from azure.identity import DefaultAzureCredential
-from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
 from langchain_azure_ai.embeddings import AzureAIOpenAIApiEmbeddingsModel
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.embeddings import Embeddings
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from core_examples.constants import CONFIG_FILE_PATH
 from core_examples.utils.config_loader import read_yaml
 from core_examples.utils.key_vault import get_secret
 from core_examples.utils.ollama.ollama_wsl_proxy import resolve_ollama_base_url
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,10 @@
 from typing import Any, Literal, cast
-from pydantic import BaseModel
+
 from langchain_core.messages import AnyMessage
+from pydantic import BaseModel
+
 from frankstate.entity.statehandler import StateEvaluator
+
 
 class GradeRewriteGenerate(StateEvaluator):
     """Choose between answer generation and question rewriting.

@@ -1,5 +1,6 @@
 from langgraph.graph import MessagesState
 
+
 class SharedState(MessagesState):
     """Minimal state schema for message-only agent graphs.
 

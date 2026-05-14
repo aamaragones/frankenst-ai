@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class GradeDocuments(BaseModel):
     """Grade documents using a binary score for relevance check."""
 

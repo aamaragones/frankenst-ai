@@ -78,8 +78,13 @@ This keeps `frankstate` root stable and prevents it from turning into an absolut
 
 - Python 3.12.3 or higher
 - Ollama 0.20.2 or higher (free); or an Azure Foundry Deployment (payment)
-- pip (Python package manager)
-- uv (install with pip)
+- uv 0.8 or higher
+
+Install `uv` with the official installer:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ## Installation
 
@@ -94,16 +99,7 @@ For package-only documentation, examples, and API framing, prefer `README-pypi.m
 - With `pip` installer:
 ```pip install frankstate```
 - With `uv` installer:
-```python -m uv pip install frankstate```
-
-
-(Optional) `examples` extra dependencies:
-
-- With `pip` installer:
-```pip install frankstate[examples]```
-- With `uv` installer:
-```python -m uv pip install frankstate[examples]```
-
+```uv pip install frankstate```
 
 This option installs only the published `frankstate` wheel.
 It does not install the repository reference package under `src/core_examples`, the service layer under `src/services`, or the repository tests.
@@ -115,31 +111,43 @@ Use this option when you want the full mono-repo, including `src/core_examples`,
 
 1. Clone the repository.
 
-2. Create a virtual environment:
+2. Create a local virtual environment:
 
     ```bash
-    python -m venv .venv
+    uv venv .venv
     ```
 
-3. Activate the virtual environment:
-    - On Windows:
-    ```.venv\Scripts\activate```
-    - On macOS and Linux:
-    ```source .venv/bin/activate```
-
-4. Install the repository in editable mode:
+3. Activate it:
 
     ```bash
-    python -m uv pip install -e .
+    source .venv/bin/activate
+    ```
+
+    On Windows PowerShell:
+
+    ```powershell
+    .venv\Scripts\Activate.ps1
+    ```
+
+4. Sync the base repository environment:
+
+    ```bash
+    uv sync --frozen
     ```
 
 5. If you also want the repository examples and development dependencies:
 
     ```bash
-    python -m uv pip install -e .[examples,dev]
+    uv sync --frozen --extra examples --group dev
     ```
 
-6. (Optional) System packages for the example/document-processing stack:
+6. Run commands from the active virtual environment, or keep using `uv run`:
+
+    ```bash
+    uv run pytest -q
+    ```
+
+7. (Optional) System packages for the example/document-processing stack:
 
     ```
     sudo apt update
@@ -147,7 +155,9 @@ Use this option when you want the full mono-repo, including `src/core_examples`,
     sudo apt install tesseract-ocr
     ```
 
-Check optional root shortcuts with `make help`
+`uv.lock` is committed, so `uv sync --frozen` recreates the repository environment without resolver drift.
+
+Check optional root shortcuts with `make help`.
 
 ## Running the Repository Locally
 
@@ -214,21 +224,29 @@ LOG_LEVEL=DEBUG python app.py
 LOG_LEVEL=DEBUG LOG_TO_FILE=true python app.py
 ```
 
-## Running Tests
+## Local Validation
 
-These commands validate the repository, including the `frankstate` core tests, the reference package, and repository-level integrations covered by the current suite.
+```bash
+uv run ruff check
+uv run mypy
+uv run pytest --cov=src --cov-report=term-missing -v
+```
 
-- Using the pytest CLI:
-```pytest -q```
-- Using pytest as a Python module:
-```python -m pytest -q```
+For a quick test-only pass:
+
+```bash
+uv run pytest -q
+```
 
 If you prefer root shortcuts:
 
 - `make test` runs the full repository suite.
 - `make test-frankstate` runs only the installable package suite under `tests/unit_test/frankstate`.
 
-## Local Functions Apps Container 
+`ruff`, `mypy`, and `pytest` read their configuration from `pyproject.toml`.
+The Docker validation pipeline runs this same `uv` sequence before image build steps.
+
+## Local Functions Apps Container Run
 
 This section is repository-specific and does not describe behavior of the published `frankstate` wheel.
 - `src/services/functions/function_app.py` is an Azure Functions App Containers packaging
@@ -236,11 +254,11 @@ This section is repository-specific and does not describe behavior of the publis
     expected to load only after the container build reshapes the filesystem under
     `/home/site/wwwroot`.
 
-- Start your Function App Container recipes: 
-    ```bash 
-    docker build <build args -> build-and-push-acr.yml> mylocalfunction:0.1 . 
+- Useful local checks:
+    ```bash
+    docker build -f src/services/functions/Dockerfile -t mylocalfunction:0.1 .
     docker run -d -p 8080:80 mylocalfunction:0.1
-    docker logs <container_id>  
+    docker logs <container_id>
     ```
 
 - Docker deep debug recipes: 
@@ -260,8 +278,8 @@ This section is repository-specific and does not describe behavior of the publis
 frankenst-ai/
 ├── main.py                  # Local entry point to assemble and compile graph layouts
 ├── app.py                   # Optional deployment-facing wrapper entry point
-├── requirements.txt         # Aggregate dependency set for the full repository environment
-├── requirements-*.txt       # Dependency profiles split into base frankstate, example backends and dev
+├── pyproject.toml           # Single source of truth for package metadata, extras and dependency groups
+├── uv.lock                  # Locked repository environment for reproducible uv sync flows
 ├── .env                     # Environment variables for local configuration; .env.example for reference
 ├── README.md                # Main project documentation
 ├── src/

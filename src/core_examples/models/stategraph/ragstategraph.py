@@ -1,5 +1,6 @@
 from langgraph.graph import MessagesState
 
+
 class RAGState(MessagesState):
     """
     State schema for the adaptive RAG layouts.

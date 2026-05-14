@@ -46,7 +46,7 @@ pip install frankstate
 With `uv`:
 
 ```bash
-python -m uv pip install frankstate
+uv pip install frankstate
 ```
 
 Optional example dependencies:

@@ -1,11 +1,11 @@
 import logging
-from langchain_core.runnables import RunnableLambda
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.runnables import Runnable
 
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import Runnable, RunnableLambda
+
+from core_examples.utils.rag.processing import parse_context, parse_docs
 from frankstate.entity.runnable_builder import RunnableBuilder
-from core_examples.utils.rag.processing import parse_docs, parse_context
 
 
 class MultimodalRetriever(RunnableBuilder):

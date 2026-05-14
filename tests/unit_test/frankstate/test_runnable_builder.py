@@ -2,7 +2,10 @@ import asyncio
 
 import pytest
 
-from tests.support.frankstate_doubles.builders import FakeRunnableBuilder, FakeVectorStore
+from tests.support.frankstate_doubles.builders import (
+    FakeRunnableBuilder,
+    FakeVectorStore,
+)
 
 
 @pytest.mark.unit

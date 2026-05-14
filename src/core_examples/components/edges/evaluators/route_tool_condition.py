@@ -1,6 +1,8 @@
 from typing import Any, Literal
-from pydantic import BaseModel
+
 from langchain_core.messages import AnyMessage
+from pydantic import BaseModel
+
 from frankstate.entity.statehandler import StateEvaluator
 
 

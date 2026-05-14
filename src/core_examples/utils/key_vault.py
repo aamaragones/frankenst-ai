@@ -1,5 +1,5 @@
-from functools import lru_cache
 import os
+from functools import lru_cache
 
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
@@ -21,7 +21,7 @@ def _to_keyvault_name(name: str) -> str:
 def _get_secret_client() -> SecretClient:
     key_vault_name = os.getenv("AZURE_KEY_VAULT_NAME")
     if not key_vault_name:
-        raise EnvironmentError("AZURE_KEY_VAULT_NAME environment variable is not set")
+        raise OSError("AZURE_KEY_VAULT_NAME environment variable is not set")
 
     key_vault_uri = f"https://{key_vault_name}.vault.azure.net"
     return SecretClient(vault_url=key_vault_uri, credential=DefaultAzureCredential())

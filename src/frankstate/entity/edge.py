@@ -1,8 +1,10 @@
 from collections.abc import Hashable
 from typing import Literal
+
 from frankstate.entity.statehandler import StateEvaluator
 
-class BaseEdge():
+
+class BaseEdge:
     """Base edge definition storing the source node name."""
 
     def __init__(self, node_source: str | Literal["START", "END"]):

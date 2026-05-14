@@ -3,7 +3,6 @@ from pathlib import Path
 
 from azure.search.documents.indexes.models import SearchIndex
 
-
 SCHEMAS_DIRECTORY = Path(__file__).resolve().parent
 
 AI_SEARCH_INDEX_SCHEMA_MAP: dict[str, str] = {

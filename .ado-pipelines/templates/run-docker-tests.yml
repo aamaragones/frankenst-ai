@@ -18,34 +18,18 @@ parameters:
     type: object
     default: {}
     displayName: Docker build arguments for the optional test runner image
-  - name: project_directory
+  - name: uv_sync_args
     type: string
-    default: '.'
-    displayName: Project directory mounted inside the container
-  - name: requirements_path
+    default: '--group dev'
+    displayName: Additional arguments passed to uv sync
+  - name: coverage_source
     type: string
-    default: 'requirements.txt'
-    displayName: Path to requirements.txt relative to project directory
-  - name: pytest_target
-    type: string
-    default: 'tests'
-    displayName: Pytest target path
+    default: 'src'
+    displayName: Source path used for coverage collection
   - name: pytest_mark_expression
     type: string
     default: 'unit or integration'
     displayName: Pytest marker expression
-  - name: coverage_target
-    type: string
-    default: 'src'
-    displayName: Coverage target path
-  - name: report_directory
-    type: string
-    default: 'pytest_reports/docker-tests'
-    displayName: Directory under Agent.TempDirectory where test reports will be generated
-  - name: extra_pip_packages
-    type: string
-    default: 'pytest-cov'
-    displayName: Extra pip packages installed only for the CI run
   - name: env_variables
     type: object
     default: {}
@@ -63,8 +47,8 @@ jobs:
       - script: |
           set -euo pipefail
 
-          PROJECT_DIR="$(Build.SourcesDirectory)/${{ parameters.project_directory }}"
-          REPORT_DIR="$(Agent.TempDirectory)/${{ parameters.report_directory }}"
+          PROJECT_DIR="$(Build.SourcesDirectory)"
+          REPORT_DIR="$(Agent.TempDirectory)/pytest_reports/docker-tests"
           RUNNER_IMAGE="${{ parameters.docker_image }}"
           TEST_RUNNER_IMAGE=""
 
@@ -109,24 +93,39 @@ jobs:
             -v "$REPORT_DIR:/test-results" \
             -w /workspace \
             -e PYTHONPATH="/workspace:/workspace/src" \
-            -e PIP_ROOT_USER_ACTION=ignore \
             -e PYTHONDONTWRITEBYTECODE=1 \
             -e COVERAGE_FILE=/test-results/.coverage \
+            -e RUFF_CACHE_DIR=/tmp/ruff-cache \
+            -e MYPY_CACHE_DIR=/tmp/mypy-cache \
+            -e UV_PROJECT_ENVIRONMENT=/tmp/uv-env \
+            -e UV_CACHE_DIR=/tmp/uv-cache \
+            -e UV_PYTHON_DOWNLOADS=never \
+            -e TEST_REPORT_DIR=/test-results \
+            -e PYTEST_MARK_EXPRESSION="${{ parameters.pytest_mark_expression }}" \
             "${DOCKER_ENV_ARGS[@]}" \
             "$RUNNER_IMAGE" \
             /bin/bash -lc '
               set -euo pipefail
-              mkdir -p /tmp/pytest-cache
-              python -m pip install --upgrade pip
-              pip install -r "${{ parameters.requirements_path }}"
-              if [ -n "${{ parameters.extra_pip_packages }}" ]; then
-                pip install ${{ parameters.extra_pip_packages }}
+              mkdir -p /tmp/pytest-cache /tmp/ruff-cache /tmp/mypy-cache /tmp/uv-cache /tmp/uv-env
+              if ! command -v uv >/dev/null 2>&1; then
+                if command -v apt-get >/dev/null 2>&1; then
+                  apt-get update
+                  apt-get install -y --no-install-recommends curl ca-certificates
+                  rm -rf /var/lib/apt/lists/*
+                fi
+                curl -LsSf https://astral.sh/uv/install.sh | sh
               fi
-              python -m pytest ${{ parameters.pytest_target }} \
-                -m "${{ parameters.pytest_mark_expression }}" \
-                -o cache_dir=/tmp/pytest-cache \
+
+              export PATH="$HOME/.local/bin:$PATH"
+
+              uv sync --frozen ${{ parameters.uv_sync_args }}
+              uv run --frozen ruff check
+              uv run --frozen mypy --cache-dir /tmp/mypy-cache
+              uv run --frozen pytest \
+                -m "${PYTEST_MARK_EXPRESSION}" \
+                -p no:cacheprovider \
                 --junitxml=/test-results/junit.xml \
-                --cov=${{ parameters.coverage_target }} \
+                --cov=${{ parameters.coverage_source }} \
                 --cov-report=xml:/test-results/coverage.xml \
                 --cov-report=term-missing \
                 -v
@@ -143,7 +142,7 @@ jobs:
         condition: always()
         inputs:
           testResultsFormat: JUnit
-          testResultsFiles: '$(Agent.TempDirectory)/${{ parameters.report_directory }}/junit.xml'
+          testResultsFiles: '$(Agent.TempDirectory)/pytest_reports/docker-tests/junit.xml'
           failTaskOnFailedTests: true
           testRunTitle: 'Run Docker Tests'
 
@@ -151,5 +150,5 @@ jobs:
         displayName: Publish Code Coverage
         condition: always()
         inputs:
-          summaryFileLocation: '$(Agent.TempDirectory)/${{ parameters.report_directory }}/coverage.xml'
-          pathToSources: '$(Build.SourcesDirectory)/${{ parameters.project_directory }}/src'
+          summaryFileLocation: '$(Agent.TempDirectory)/pytest_reports/docker-tests/coverage.xml'
+          pathToSources: '$(Build.SourcesDirectory)/src'

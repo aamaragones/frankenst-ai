@@ -1,8 +1,9 @@
 import json
+
 import azure.functions as func
+
 from .orchestrator import Orchestrator
 from .properties import tool_properties
-
 
 bp_3 = func.Blueprint()
 

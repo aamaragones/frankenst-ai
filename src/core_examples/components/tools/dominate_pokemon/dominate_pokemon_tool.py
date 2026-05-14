@@ -1,9 +1,12 @@
 import logging
+
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, SkipValidation
-from .dominate_pokemon_property import DominatePokemonProperty
+
 from .dominate_pokemon import DominatePokemon
+from .dominate_pokemon_property import DominatePokemonProperty
+
 
 class DominatePokemonTool(BaseTool):
     # BaseTool atributes

@@ -1,5 +1,5 @@
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 
 from langchain_chroma.vectorstores import Chroma
 from langchain_classic.storage import LocalFileStore, create_kv_docstore
@@ -12,8 +12,9 @@ from core_examples.utils.common import (
     get_project_root_path,
     resolve_configured_path,
 )
-from core_examples.utils.rag.langchain_unstructured_indexer import LangChainMultiVectorDocumentIndexer
-
+from core_examples.utils.rag.langchain_unstructured_indexer import (
+    LangChainMultiVectorDocumentIndexer,
+)
 
 LOCAL_CHROMA_COLLECTION_NAME = "local_pokemon_collection"
 LOCAL_DOC_ID_KEY = "doc_id"

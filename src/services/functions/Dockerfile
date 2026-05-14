@@ -19,12 +19,14 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists/*
 ENV PATH="/root/.local/bin:/home/.local/bin:$PATH"
 
-# Install Python requirements
-COPY requirements*.txt /tmp/requirements/
-RUN uv pip install --system --no-cache -r /tmp/requirements/requirements.txt \
-    && rm -rf /tmp/requirements
+# Install Python dependencies from the locked uv project
+COPY pyproject.toml uv.lock /home/site/wwwroot/
+RUN cd /home/site/wwwroot \
+ && uv export --frozen --no-dev --no-emit-project --format requirements.txt > /tmp/uv-requirements.txt \
+ && uv pip install --system --no-cache -r /tmp/uv-requirements.txt \
+ && rm -f /tmp/uv-requirements.txt
 
-# Prepare Function App
-COPY src/ /home/site/wwwroot
+# Prepare the Function App
+COPY src/ /home/site/wwwroot/
 RUN mv /home/site/wwwroot/services/functions/* /home/site/wwwroot/ && \
-    rm -rf /home/site/wwwroot/services/functions
+ rm -rf /home/site/wwwroot/services/functions

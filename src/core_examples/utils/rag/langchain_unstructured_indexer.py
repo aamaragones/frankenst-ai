@@ -1,21 +1,27 @@
-import os
 import base64
 import io
+import os
 import uuid
 from typing import Any
 
-from PIL import Image
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from unstructured.partition.pdf import partition_pdf
 from azure.core.exceptions import HttpResponseError
+from langchain_classic.retrievers.multi_vector import MultiVectorRetriever
 from langchain_core.documents import Document
+from langchain_core.language_models import BaseLanguageModel
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables.base import RunnableSequence
 from langchain_core.stores import BaseStore, InMemoryStore
 from langchain_core.vectorstores import VectorStore
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables.base import RunnableSequence
-from langchain_classic.retrievers.multi_vector import MultiVectorRetriever
+from PIL import Image
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+from unstructured.partition.pdf import partition_pdf
+
 
 # TODO: Async load, split, summary
 # TODO: metadata list to impement unstructured

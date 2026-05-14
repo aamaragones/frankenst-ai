@@ -23,12 +23,8 @@ jobs:
   - template: run-docker-tests.yml
     parameters:
       capability: ${{ parameters.capability }}
-      project_directory: '.'
-      requirements_path: 'requirements.txt'
-      pytest_target: 'tests'
+      uv_sync_args: '--group dev --extra examples'
       pytest_mark_expression: 'unit or integration'
-      coverage_target: 'src'
-      report_directory: 'pytest_reports/docker-tests'
 
   - job: BuildImage
     displayName: Build and Push Image to ACR

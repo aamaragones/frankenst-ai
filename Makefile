@@ -9,12 +9,19 @@ FUNCTION_APP_CONTAINER_NAME ?= frankenst-ai-functions-app
 FUNCTION_APP_PORT ?= 8080
 
 FRANKSTATE_TESTS := tests/unit_test/frankstate
+PACKAGE_PATHS := src/frankstate tests/unit_test/frankstate
 
-.PHONY: help install-dev test test-frankstate build clean streamlit mcp-server function-app-build function-app-run function-app-stop function-app-logs docker-build docker-run docker-stop docker-prune docker-rebuild
+.PHONY: help install install-dev lock format lint type test test-frankstate build clean streamlit mcp-server function-app-build function-app-run function-app-stop function-app-logs docker-build docker-run docker-stop docker-prune docker-rebuild
 
 help:
 	@echo "Available targets:"
-	@echo "  install-dev    - Install the repository with examples and dev extras"
+	@echo "  quick-start    - uv venv .venv && source .venv/bin/activate"
+	@echo "  install        - Sync the active virtual environment with uv"
+	@echo "  install-dev    - Sync the active virtual environment with examples and dev extras"
+	@echo "  lock           - Refresh uv.lock from pyproject.toml"
+	@echo "  format         - Format the published package slice with ruff"
+	@echo "  lint           - Run ruff checks on the published package slice"
+	@echo "  type           - Run mypy on the published package slice"
 	@echo "  test           - Run the full repository test suite"
 	@echo "  test-frankstate - Run only the installable frankstate package tests"
 	@echo "  build          - Build wheel/sdist and validate dist metadata"
@@ -31,27 +38,43 @@ help:
 	@echo "  docker-prune   - Remove unused Docker objects"
 	@echo "  docker-rebuild - Prune Docker caches and rebuild the image"
 
+install:
+	uv sync --frozen
+
 install-dev:
-	$(PYTHON) -m uv pip install -e '.[examples,dev]'
+	uv sync --frozen --extra examples --group dev
+
+lock:
+	uv lock
+
+format:
+	uv run ruff format $(PACKAGE_PATHS)
+	uv run ruff check --fix $(PACKAGE_PATHS)
+
+lint:
+	uv run ruff check $(PACKAGE_PATHS)
+
+type:
+	uv run mypy src/frankstate
 
 test:
-	pytest -q
+	uv run pytest -q
 
 test-frankstate:
-	pytest -q $(FRANKSTATE_TESTS)
+	uv run pytest -q $(FRANKSTATE_TESTS)
 
 build: clean
-	$(PYTHON) -m build --no-isolation
-	$(PYTHON) -m twine check dist/*
+	uv build
+	uv run twine check dist/*
 
 clean:
 	rm -rf build dist .pytest_cache .ruff_cache .mypy_cache src/frankstate.egg-info
 
 streamlit:
-	streamlit run app.py
+	uv run streamlit run app.py
 
 mcp-server:
-	PYTHONPATH=src $(PYTHON) src/services/mcp/server_oaklang_agent.py
+	PYTHONPATH=src uv run python src/services/mcp/server_oaklang_agent.py
 
 function-app-build:
 	docker build -f src/services/functions/Dockerfile -t $(FUNCTION_APP_IMAGE_NAME) .

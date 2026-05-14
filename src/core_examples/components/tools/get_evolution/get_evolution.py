@@ -1,6 +1,5 @@
 import requests
 
-
 REQUEST_TIMEOUT_SECONDS = 10
 
 

@@ -3,7 +3,9 @@ from collections.abc import Iterable
 from typing import Any
 
 from langgraph.prebuilt import ToolNode
+
 from frankstate.entity.node import BaseNode, CommandNode, SimpleNode
+
 
 class NodeManager:
     """Store graph node definitions and expose them in `StateGraph` format.
@@ -27,7 +29,7 @@ class NodeManager:
         nodes: SimpleNode | CommandNode | ToolNode | Iterable[SimpleNode | CommandNode | ToolNode],
     ) -> list[SimpleNode | CommandNode | ToolNode]:
         """Return nodes as a list while supporting single-node inputs."""
-        if isinstance(nodes, (SimpleNode, CommandNode, ToolNode)):
+        if isinstance(nodes, SimpleNode | CommandNode | ToolNode):
             return [nodes]
 
         return list(nodes)
@@ -101,7 +103,7 @@ class NodeManager:
         containing any mix of those types.
         """
         for node in self._normalize_nodes(nodes):
-            if isinstance(node, (SimpleNode, CommandNode, ToolNode)):
+            if isinstance(node, SimpleNode | CommandNode | ToolNode):
                 if node.name in self.nodes:
                     raise ValueError(f"Node name '{node.name}' is already registered")
                 self.nodes[node.name] = node

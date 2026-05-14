@@ -3,8 +3,8 @@ import binascii
 import io
 from typing import Any
 
-from PIL import Image
 from langchain_core.documents import Document
+from PIL import Image
 
 
 def _extract_base64_image_payload(doc: Any) -> str | None:

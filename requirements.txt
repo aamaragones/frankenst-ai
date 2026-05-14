@@ -1,3 +1,0 @@
--r requirements-frankstate-core.txt
--r requirements-examples.txt
--r requirements-dev.txt

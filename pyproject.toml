@@ -3,21 +3,49 @@ requires = ["setuptools>=78.1.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-dynamic = ["dependencies", "optional-dependencies"]
 name = "frankstate"
 version = "0.1.1"
 description = "Frank brings order and helps you build complex LLM workflows using scalable, testable, and reusable components."
 license = "MIT"
 readme = { file = "README-pypi.md", content-type = "text/markdown" }
 requires-python = ">=3.12.3"
+dependencies = [
+    "langchain-core>=1.3.0,<1.4",
+    "langgraph>=1.1.8,<1.2",
+    "pydantic>=2.12.5,<3",
+]
 authors = [
-    { name = "eiingeeel", email = "aangel.maragones@outlook.com" }
+    { name = "aamaragones", email = "aangel.maragones@outlook.com" }
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent"
 ]
-keywords = ["LLM", "azure", "langgraph", "langchain", "azure-ai-foundry", "unstructured", "multimodal"]
+keywords = ["LLM", "azure", "langgraph", "langchain", "azure-foundry", "unstructured", "multimodal"]
+
+[project.optional-dependencies]
+examples = [
+    "langchain",
+    "PyYAML",
+    "requests",
+    "azure-functions",
+    "azure-keyvault-secrets",
+    "azure-identity",
+    "azure-search-documents",
+    "azure-storage-blob",
+    "langchain-azure-ai[opentelemetry]",
+    "langchain-ollama",
+    "langchain-chroma",
+    "langchain-classic",
+    "langchain-mcp-adapters",
+    "fastmcp",
+    "Pillow",
+    "tenacity",
+    "unstructured[pdf]",
+    "ipykernel",
+    "ipywidgets",
+    "matplotlib",
+]
 
 [project.urls]
 homepage = "https://github.com/eiingeeel/frankenst-ai"
@@ -25,12 +53,24 @@ changelog = "https://github.com/eiingeeel/frankenst-ai/blob/main/CHANGELOG.md"
 issues = "https://github.com/eiingeeel/frankenst-ai/issues"
 repository = "https://github.com/eiingeeel/frankenst-ai"
 
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements-frankstate-core.txt"] }
+[dependency-groups]
+lint = [
+    "mypy==1.18.2",
+    "ruff==0.11.13",
+]
+test = [
+    "pytest==9.0.2",
+    "pytest-cov==7.0.0",
+]
+dev = [
+    { include-group = "lint" },
+    { include-group = "test" },
+    "build==1.4.2",
+    "twine==6.2.0",
+]
 
-[tool.setuptools.dynamic.optional-dependencies]
-examples = { file = ["requirements-examples.txt"] }
-dev = { file = ["requirements-dev.txt"] }
+[tool.uv]
+default-groups = ["dev"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -38,6 +78,26 @@ include = ["frankstate", "frankstate.*"]
 namespaces = false
 # The published core wheel intentionally contains only `frankstate`.
 # `core_examples` remains the documented reference package of this repository.
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+extend-include = ["*.ipynb"]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/frankstate"]
+explicit_package_bases = true
+mypy_path = ["src"]
+warn_no_return = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+allow_redefinition = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit_test", "tests/integration_test"]

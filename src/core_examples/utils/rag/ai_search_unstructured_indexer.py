@@ -1,27 +1,33 @@
-import os
 import base64
-import io
-import uuid
 import datetime as dt
+import io
+import os
+import uuid
 from typing import Any
-
-from PIL import Image
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from unstructured.partition.pdf import partition_pdf
 
 from azure.core.exceptions import HttpResponseError
 from azure.search.documents import SearchClient
-from azure.search.documents.models import IndexingResult
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import SearchIndex
-from core_examples.utils.rag.ai_search_schemas import load_registered_ai_search_index_definition
-
-
+from azure.search.documents.models import IndexingResult
+from langchain_core.embeddings import Embeddings
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.language_models import BaseLanguageModel
-from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.base import RunnableSequence
+from PIL import Image
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+from unstructured.partition.pdf import partition_pdf
+
+from core_examples.utils.rag.ai_search_schemas import (
+    load_registered_ai_search_index_definition,
+)
+
 
 class AISearchMultiVectorDocumentIndexer:
     def __init__(

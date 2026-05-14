@@ -9,10 +9,11 @@ from langchain_core.vectorstores import VectorStore
 from core_examples.utils.rag.local_chroma import (
     LOCAL_CHROMA_COLLECTION_NAME,
     LOCAL_CHROMA_DIRECTORY,
-    LOCAL_DOCSTORE_DIRECTORY,
     LOCAL_DOC_ID_KEY,
+    LOCAL_DOCSTORE_DIRECTORY,
     get_local_retriever_storage,
 )
+
 
 class LangchainChromaMultiVectorRetriever:
     """Build a local persistent MultiVectorRetriever backed by Chroma and a file docstore."""

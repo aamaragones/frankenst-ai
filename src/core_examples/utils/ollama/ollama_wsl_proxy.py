@@ -7,7 +7,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-
 WINDOWS_CURL = os.getenv("WINDOWS_CURL_PATH", "/mnt/c/WINDOWS/system32/curl.exe")
 TARGET_BASE_URL = os.getenv("OLLAMA_WINDOWS_BASE_URL", "http://127.0.0.1:11434")
 PROXY_HOST = os.getenv("OLLAMA_PROXY_HOST", "127.0.0.1")

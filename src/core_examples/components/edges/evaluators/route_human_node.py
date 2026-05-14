@@ -1,7 +1,10 @@
 from typing import Any, Literal, cast
-from pydantic import BaseModel
+
 from langchain_core.messages import AIMessage, AnyMessage
+from pydantic import BaseModel
+
 from frankstate.entity.statehandler import StateEvaluator
+
 
 class RouteHumanNode(StateEvaluator):
     """Route to human review when the latest message contains tool calls.

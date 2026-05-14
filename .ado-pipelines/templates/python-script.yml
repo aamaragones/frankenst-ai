@@ -2,22 +2,22 @@ parameters:
   - name: capability
     type: string
     displayName: Requested agent capability
-  - name: requirements_path
+  - name: uv_sync_args
     type: string
-    default: 'requirements.txt'
-    displayName: 'Ruta del archivo requirements.txt'
+    default: '--group dev'
+    displayName: 'Additional arguments passed to uv sync'
   - name: script_path
     type: string
     default: 'scripts/myscript.py'
-    displayName: 'Ruta del script Python a ejecutar'
+    displayName: 'Path to the Python script to execute'
   - name: script_args
     type: string
     default: ''
-    displayName: 'Argumentos para el script Python'
+    displayName: 'Arguments passed to the Python script'
   - name: env_variables
     type: object
     default: {}
-    displayName: 'Variables de entorno para el script'
+    displayName: 'Environment variables passed to the script'
   - name: service_connection
     type: string
     default: ''
@@ -32,36 +32,45 @@ jobs:
     - checkout: self
  
     - task: UsePythonVersion@0
-      displayName: 'Seleccionar versión de Python'
+      displayName: 'Select Python version'
       inputs:
         versionSpec: '3.12'
         addToPath: true
  
     - script: |
-        echo "Instalando dependencias desde ${{ parameters.requirements_path }}..."
-        python -m pip install --upgrade pip
-        pip install -r ${{ parameters.requirements_path }}
-      displayName: 'Instalar dependencias Python'
+        set -euo pipefail
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        export PATH="$HOME/.local/bin:$PATH"
+
+        echo "Syncing environment with uv..."
+        uv sync --frozen ${{ parameters.uv_sync_args }}
+      displayName: 'Sync Python dependencies with uv'
  
     - ${{ if ne(parameters.service_connection, '') }}:
       - task: AzureCLI@2
-        displayName: 'Excecute Python Script with Service Connection'
+        displayName: 'Execute Python script with service connection'
         inputs:
           azureSubscription: ${{ parameters.service_connection }}
           scriptType: 'bash'
           scriptLocation: 'inlineScript'
           inlineScript: |
-            echo "Ejecutando script Python: ${{ parameters.script_path }}"
-            cd src && python -m $(echo "${{ parameters.script_path }}" | sed 's|^src/||' | sed 's|/|.|g' | sed 's|\.py$||') ${{ parameters.script_args }}
+            set -euo pipefail
+            export PATH="$HOME/.local/bin:$PATH"
+
+            echo "Running Python script: ${{ parameters.script_path }}"
+            uv run python "${{ parameters.script_path }}" ${{ parameters.script_args }}
         env:
           ${{ each var in parameters.env_variables }}:
             ${{ var.key }}: ${{ var.value }}
 
     - ${{ if eq(parameters.service_connection, '') }}:
       - script: |
-          echo "Executing Python script: ${{ parameters.script_path }}"
-          cd src && python -m $(echo "${{ parameters.script_path }}" | sed 's|^src/||' | sed 's|/|.|g' | sed 's|\.py$||') ${{ parameters.script_args }}
-        displayName: 'Ejecutar script Python'
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+
+          echo "Running Python script: ${{ parameters.script_path }}"
+          uv run python "${{ parameters.script_path }}" ${{ parameters.script_args }}
+        displayName: 'Execute Python script'
         env:
           ${{ each var in parameters.env_variables }}:
             ${{ var.key }}: ${{ var.value }}

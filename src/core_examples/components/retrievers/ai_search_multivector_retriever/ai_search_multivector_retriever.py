@@ -1,6 +1,5 @@
 from azure.search.documents import SearchClient
 from azure.search.documents.models import VectorizedQuery
-
 from langchain_core.embeddings import Embeddings
 
 
