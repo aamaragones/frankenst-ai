@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   tests:
-    name: tests frankstate
+    name: tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,7 +38,7 @@ jobs:
       - name: Run mypy for frankstate
         run: uv run mypy src/frankstate
 
-      - name: Run Frankstate test suite
+      - name: Run frankstate test suite
         run: uv run pytest -q tests/unit_test/frankstate
 
   build:
