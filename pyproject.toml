@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frankstate"
-version = "0.1.2"
+version = "0.1.3"
 description = "Frank brings order and helps you build complex LLM workflows using scalable, testable, and reusable components."
 license = "MIT"
 readme = { file = "README-pypi.md", content-type = "text/markdown" }
