@@ -10,10 +10,10 @@ from core_examples.utils.common import (
     load_and_clean_text_file,
     resolve_package_resource,
 )
-from frankstate.entity.runnable_builder import RunnableBuilder
+from frankstate.entity.runnable_builder import PromptMixin, RunnableBuilder
 
 
-class RewriteQuestion(RunnableBuilder):
+class RewriteQuestion(PromptMixin, RunnableBuilder):
     logger: logging.Logger = logging.getLogger(__name__)
 
     def __init__(self, model: BaseChatModel):

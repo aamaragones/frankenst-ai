@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ import core_examples.utils.common as common_module
 import core_examples.utils.config_loader as config_loader_module
 import core_examples.utils.logger as logger_module
 import core_examples.utils.rag.local_chroma as local_chroma_module
-from dataclasses import dataclass, field
+
 
 @dataclass
 class _FakeSettings:

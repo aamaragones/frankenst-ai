@@ -12,16 +12,17 @@ from core_examples.utils.common import (
     load_and_clean_text_file,
     resolve_package_resource,
 )
-from frankstate.entity.runnable_builder import RunnableBuilder
+from frankstate.entity.runnable_builder import PromptMixin, RunnableBuilder
 
 from .history_template import history_template
 
 
-class OakLangAgent(RunnableBuilder):
+class OakLangAgent(PromptMixin, RunnableBuilder):
     logger: logging.Logger = logging.getLogger(__name__)
 
     def __init__(self, model: BaseChatModel, tools: list[BaseTool]):
-        super().__init__(model=model, tools=tools)
+        self.tools = tools
+        super().__init__(model=model)
 
         self.logger.info("OakLangAgent initialized")
 
@@ -55,7 +56,7 @@ class OakLangAgent(RunnableBuilder):
             output_format=output_format,
             restrictions=restrictions
         )
-        
+
         self.logger.info(system_prompt)
 
         return ChatPromptTemplate.from_messages([
@@ -69,7 +70,6 @@ class OakLangAgent(RunnableBuilder):
         prompt_template = self._build_prompt()
         model_with_tools = self.model.bind_tools(self.tools or [])
 
-        # Create the chain
         chain = prompt_template | model_with_tools
 
         return chain

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog and the project currently stays in the `0.x`
 phase while the public packaging and repository boundaries continue to mature.
 
+## [0.1.3] - 2026-05-15
+
+### Added
+
+- `PromptMixin` and `RetrieverMixin` cooperative mixins for `RunnableBuilder`, enabling prompt-building and lazy retriever initialization as composable, opt-in capabilities.
+
+### Changed
+
+- `RunnableBuilder` contract is now stricter: `model` is keyword-only, `_configure_runnable` is the single required abstract hook, and `invoke` / `ainvoke` / `get` / `runnable` form the complete public surface.
+- `RetrieverMixin` exposes a `retriever` lazy property and a `_build_retriever(**kwargs)` hook; it accepts either a pre-built `BaseRetriever` or a `VectorStore` and raises a descriptive `ValueError` when neither is provided.
+
 ## [0.1.2] - 2026-05-14
 
 ### Added

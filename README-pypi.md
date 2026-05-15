@@ -35,6 +35,28 @@ from frankstate.managers.node_manager import NodeManager
 from frankstate.managers.edge_manager import EdgeManager
 ```
 
+## Runnable Builders
+
+The following structure 
+
+`RunnableBuilder` is a recommended way to organize LangChain LCEL builders inside a layout. 
+Optional capabilities can be added through cooperative multiple inheritance using mixins:
+
+| Mixin | Adds |
+|---|---|
+| `PromptMixin` | Enforces a `_build_prompt(**kwargs)` hook |
+| `RetrieverMixin` | Lazily initialized retriever from a `vectordb` or pre-built `retriever` |
+
+Mix and match to get exactly the capability each builder needs — no base class carries attributes it does not use:
+
+```
+ChatBuilder   → PromptMixin, RunnableBuilder                   # prompt + model
+RAGBuilder    → RetrieverMixin, PromptMixin, RunnableBuilder   # retriever + prompt + model
+AgentBuilder  → PromptMixin, RunnableBuilder                   # prompt + tools (tools stored in subclass)
+```
+
+Working examples live in `src/core_examples/components/runnables/`.
+
 ## Installation
 
 With `pip`:

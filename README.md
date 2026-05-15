@@ -303,7 +303,7 @@ frankenst-ai/
 │   └── frankstate/          # Frankstate utilities for assembling and compiling LangGraph
 │       ├── entity/
 │       │   ├── graph_layout.py       # Base GraphLayout contract: build runtime first, then declare nodes and edges
-│       │   ├── runnable_builder.py   # Builder class for LangChain Runnable objects
+│       │   ├── runnable_builder.py   # RunnableBuilder base + PromptMixin and RetrieverMixin for LCEL chain assembly
 │       │   ├── statehandler.py       # Core entities for handling StateGraph
 │       │   ├── node.py               # Core node-related entities 
 │       │   └── edge.py               # Core edge-related entities

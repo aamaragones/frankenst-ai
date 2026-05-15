@@ -1,6 +1,6 @@
 from typing import Any
 
-from frankstate.entity.runnable_builder import RunnableBuilder
+from frankstate.entity.runnable_builder import RetrieverMixin, RunnableBuilder
 
 
 class SpyRunnable:
@@ -31,7 +31,7 @@ class FakeVectorStore:
         return self.retriever
 
 
-class FakeRunnableBuilder(RunnableBuilder):
+class FakeRunnableBuilder(RetrieverMixin, RunnableBuilder):
     def __init__(
         self,
         sync_result: Any = "sync-result",

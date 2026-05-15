@@ -11,14 +11,15 @@ from core_examples.utils.common import (
     load_and_clean_text_file,
     resolve_package_resource,
 )
-from frankstate.entity.runnable_builder import RunnableBuilder
+from frankstate.entity.runnable_builder import PromptMixin, RunnableBuilder
 
 
-class StructuredGradeDocument(RunnableBuilder):
+class StructuredGradeDocument(PromptMixin, RunnableBuilder):
     logger: logging.Logger = logging.getLogger(__name__)
 
     def __init__(self, model: BaseChatModel, structured_output_schema: type[BaseModel]):
-        super().__init__(model=model, structured_output_schema=structured_output_schema)
+        super().__init__(model=model)
+        self.structured_output_schema = structured_output_schema
 
         self.logger.info("StructuredGradeDocument initialized")
 
@@ -39,7 +40,7 @@ class StructuredGradeDocument(RunnableBuilder):
             question=question,
             instructions=instructions
         )
-        
+
         prompt_content: list[str | dict[str, Any]] = [{"type": "text", "text": prompt_template}]
         prompt_content.extend(docs_by_type["images"])
 

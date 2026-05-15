@@ -10,10 +10,10 @@ from core_examples.utils.common import (
     load_and_clean_text_file,
     resolve_package_resource,
 )
-from frankstate.entity.runnable_builder import RunnableBuilder
+from frankstate.entity.runnable_builder import PromptMixin, RunnableBuilder
 
 
-class MultimodalGeneration(RunnableBuilder):
+class MultimodalGeneration(PromptMixin, RunnableBuilder):
     logger: logging.Logger = logging.getLogger(__name__)
 
     def __init__(self, model: BaseChatModel):
@@ -25,7 +25,6 @@ class MultimodalGeneration(RunnableBuilder):
         docs_by_type = kwargs["context"]
         question = kwargs["question"]
 
-        # Prepare the human_prompt
         package = __package__ or __name__
         instructions = load_and_clean_text_file(resolve_package_resource(package, 'prompt', 'instructions.md'))
 
@@ -36,7 +35,7 @@ class MultimodalGeneration(RunnableBuilder):
             retrieved_context=docs_by_type["texts"],
             question=question
         )
-        
+
         prompt_content: list[str | dict[str, Any]] = [{"type": "text", "text": prompt_template}]
         prompt_content.extend(docs_by_type["images"])
 
