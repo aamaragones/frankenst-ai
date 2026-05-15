@@ -76,7 +76,7 @@ class RunnableBuilder(ABC):
         The configured object may be a chain, a retriever or any LangChain
         runnable compatible with `invoke()` and `ainvoke()`.
         """
-        pass
+        raise NotImplementedError
     
     @property
     def _get_runnable(self) -> Runnable:

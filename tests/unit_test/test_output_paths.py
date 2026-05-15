@@ -9,6 +9,18 @@ import core_examples.utils.common as common_module
 import core_examples.utils.config_loader as config_loader_module
 import core_examples.utils.logger as logger_module
 import core_examples.utils.rag.local_chroma as local_chroma_module
+from dataclasses import dataclass, field
+
+@dataclass
+class _FakeSettings:
+    """Minimal settings stub for logging tests — avoids pydantic-settings env resolution."""
+    log_level: str | None = None
+    log_to_file: bool = False
+    default_log_file_path: Path | None = None
+    config_logging_file_path: Path | None = field(
+        default_factory=lambda: Path(__file__).resolve().parents[2]
+        / "src" / "core_examples" / "config" / "config_logging.yml"
+    )
 
 
 def test_resolve_configured_path_uses_base_dir_for_relative_paths(tmp_path: Path) -> None:
@@ -43,10 +55,13 @@ def test_save_text_to_artifact_uses_default_directory_without_constants_or_cwd(t
 
 def test_configure_logging_does_not_create_a_log_file_by_default(tmp_path: Path, monkeypatch) -> None:
     log_path = tmp_path / "logs" / "application.log"
-    monkeypatch.delenv("LOG_TO_FILE", raising=False)
-    monkeypatch.setenv("LOG_LEVEL", "INFO")
-    monkeypatch.setattr(logger_module, "DEFAULT_LOG_FILE_PATH", log_path)
+    fake_settings = _FakeSettings(log_level="INFO", log_to_file=False, default_log_file_path=log_path)
+    monkeypatch.setattr(logger_module, "get_settings", lambda: fake_settings)
     monkeypatch.setattr(logger_module, "_LOGGING_CONFIGURED", False)
+    root_logger = logging.getLogger()
+    for h in root_logger.handlers[:]:
+        h.close()
+        root_logger.removeHandler(h)
 
     logger_module.configure_logging()
     logging.getLogger("frank-tests").info("console only")
@@ -57,10 +72,13 @@ def test_configure_logging_does_not_create_a_log_file_by_default(tmp_path: Path,
 
 def test_configure_logging_creates_a_log_file_when_enabled(tmp_path: Path, monkeypatch) -> None:
     log_path = tmp_path / "logs" / "application.log"
-    monkeypatch.setenv("LOG_TO_FILE", "true")
-    monkeypatch.setenv("LOG_LEVEL", "INFO")
-    monkeypatch.setattr(logger_module, "DEFAULT_LOG_FILE_PATH", log_path)
+    fake_settings = _FakeSettings(log_level="INFO", log_to_file=True, default_log_file_path=log_path)
+    monkeypatch.setattr(logger_module, "get_settings", lambda: fake_settings)
     monkeypatch.setattr(logger_module, "_LOGGING_CONFIGURED", False)
+    root_logger = logging.getLogger()
+    for h in root_logger.handlers[:]:
+        h.close()
+        root_logger.removeHandler(h)
 
     logger_module.configure_logging()
     logging.getLogger("frank-tests").info("configured log path")

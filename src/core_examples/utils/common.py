@@ -57,7 +57,7 @@ def load_and_clean_text_file(file_path: str | Path | Traversable, remove_empty_l
             content = content.strip()
         return content
     except FileNotFoundError:
-        raise FileNotFoundError(f"Not found the file <{file_path}>.")
+        raise FileNotFoundError(f"Not found the file <{file_path}>.") from None
     
 def save_text_to_artifact(
     content: str,

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from core_examples.config.settings import get_settings
+from core_examples.config.settings import CoreSettings, get_settings
 
 
 def test_core_settings_resolve_default_repository_paths() -> None:
@@ -19,10 +19,36 @@ def test_core_settings_resolve_default_repository_paths() -> None:
 def test_core_settings_allow_environment_override(monkeypatch) -> None:
     override_path = Path("/tmp/frankenst-config.yml")
     get_settings.cache_clear()
-    monkeypatch.setenv("FRANKENST_CONFIG_FILE_PATH", str(override_path))
+    monkeypatch.setenv("FRANK_CONFIG_FILE_PATH", str(override_path))
 
     settings = get_settings()
 
     assert settings.config_file_path == override_path
 
     get_settings.cache_clear()
+
+
+def test_core_settings_read_logging_and_key_vault_from_standard_env_names(monkeypatch) -> None:
+    get_settings.cache_clear()
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("LOG_TO_FILE", "true")
+
+    settings = get_settings()
+
+    assert settings.log_level == "DEBUG"
+    assert settings.log_to_file is True
+
+    get_settings.cache_clear()
+
+
+def test_core_settings_can_load_standard_env_names_from_env_file(tmp_path: Path) -> None:
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "LOG_LEVEL=WARNING\nLOG_TO_FILE=true\n",
+        encoding="utf-8",
+    )
+
+    settings = CoreSettings(_env_file=env_file)
+
+    assert settings.log_level == "WARNING"
+    assert settings.log_to_file is True

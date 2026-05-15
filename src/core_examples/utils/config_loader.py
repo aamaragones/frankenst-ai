@@ -60,9 +60,9 @@ def read_yaml(path_to_yaml: str | Path | Traversable) -> dict[str, Any]:
 
 		return parsed_yaml_context
 	except FileNotFoundError:
-		raise FileNotFoundError(f"The configuration file '{path_to_yaml}' does not exist.")
+		raise FileNotFoundError(f"The configuration file '{path_to_yaml}' does not exist.") from None
 	except yaml.YAMLError as exc:
-		raise yaml.YAMLError(f"Error parsing YAML file {exc}")
+		raise yaml.YAMLError(f"Error parsing YAML file {exc}") from exc
 	except (KeyError, ValueError):
 		raise
 	except OSError as exc:
@@ -111,6 +111,6 @@ def load_node_registry(path_to_yaml: str | Path | Traversable) -> dict[str, dict
 			for node in validated_nodes
 		}
 	except FileNotFoundError:
-		raise FileNotFoundError(f"The configuration file '{path_to_yaml}' does not exist.")
+		raise FileNotFoundError(f"The configuration file '{path_to_yaml}' does not exist.") from None
 	except yaml.YAMLError as exc:
-		raise yaml.YAMLError(f"Error parsing YAML file {exc}")
+		raise yaml.YAMLError(f"Error parsing YAML file {exc}") from exc

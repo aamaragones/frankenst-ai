@@ -55,7 +55,7 @@ class CommandNode(BaseNode):
         kwargs: dict[str, Any] | None = None,
     ):
         try:
-            commander.destinations
+            _ = commander.destinations
         except AttributeError as exc:
             raise ValueError(
                 f"{type(commander).__name__} must expose a 'destinations: dict[str, str]' property "

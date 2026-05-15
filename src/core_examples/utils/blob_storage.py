@@ -73,10 +73,10 @@ def delete_blob(blob_path: str, container_name: str) -> None:
 
     try:
         blob_client.delete_blob()
-    except ResourceNotFoundError as exc:
+    except ResourceNotFoundError as err:
         raise FileNotFoundError(
             f"Blob '{blob_path}' was not found in container '{container_name}'"
-        ) from exc
+        ) from err
 
 
 def list_blobs(container_name: str, prefix: str | None = None) -> list[dict[str, Any]]:
@@ -109,10 +109,10 @@ def load_text_from_blob(blob_path: str, container_name: str) -> str:
         content = download_stream.readall().decode("utf-8")
         return content
 
-    except ResourceNotFoundError:
+    except ResourceNotFoundError as err:
         raise FileNotFoundError(
             f"Blob '{blob_path}' was not found in container '{container_name}'"
-        )
+        ) from err
 
 
 def load_json_from_blob(blob_path: str, container_name: str) -> dict[str, Any]:
@@ -152,10 +152,10 @@ def download_blob_to_temp_file(blob_path: str, container_name: str) -> str:
 
         return temp_path
 
-    except ResourceNotFoundError:
+    except ResourceNotFoundError as err:
         raise FileNotFoundError(
             f"Blob '{blob_path}' was not found in container '{container_name}'"
-        )
+        ) from err
 
 def download_pdf_from_blob(blob_path: str, container_name: str) -> str:
     """Download a PDF from Azure Blob Storage into a local temporary file."""
@@ -176,7 +176,7 @@ def parse_blob_subject(subject: str):
         container_index = parts.index("containers") + 1
         blobs_index = parts.index("blobs") + 1
     except ValueError:
-        raise ValueError("Invalid subject format: missing 'containers' or 'blobs' segment")
+        raise ValueError("Invalid subject format: missing 'containers' or 'blobs' segment") from None
 
     container_name = parts[container_index]
     blob_parts = parts[blobs_index:]

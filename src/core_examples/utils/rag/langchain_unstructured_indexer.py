@@ -277,7 +277,7 @@ class LangChainMultiVectorDocumentIndexer:
                     for i in range(len(chunks_list))
                 ]
                 self.retriever.vectorstore.add_documents(summary_docs)
-                self.retriever.docstore.mset(list(zip(chunk_ids, parent_docs)))
+                self.retriever.docstore.mset(list(zip(chunk_ids, parent_docs, strict=False)))
 
     def _serialize_parent_chunk(self, chunk: Any, content_type: str) -> str:
         """Serialize a raw chunk into a persistable Document page_content value."""

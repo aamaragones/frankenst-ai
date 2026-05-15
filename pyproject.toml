@@ -49,19 +49,19 @@ examples = [
 ]
 
 [project.urls]
-homepage = "https://github.com/eiingeeel/frankenst-ai"
-changelog = "https://github.com/eiingeeel/frankenst-ai/blob/main/CHANGELOG.md"
-issues = "https://github.com/eiingeeel/frankenst-ai/issues"
-repository = "https://github.com/eiingeeel/frankenst-ai"
+homepage = "https://github.com/aamaragones/frankenst-ai"
+changelog = "https://github.com/aamaragones/frankenst-ai/blob/main/CHANGELOG.md"
+issues = "https://github.com/aamaragones/frankenst-ai/issues"
+repository = "https://github.com/aamaragones/frankenst-ai"
 
 [dependency-groups]
 lint = [
-    "mypy==1.18.2",
-    "ruff==0.11.13",
+    "mypy==2.1.0",
+    "ruff==0.15.13",
 ]
 test = [
-    "pytest==9.0.2",
-    "pytest-cov==7.0.0",
+    "pytest==9.0.3",
+    "pytest-cov==7.1.0",
 ]
 dev = [
     { include-group = "lint" },
@@ -87,7 +87,7 @@ extend-include = ["*.ipynb"]
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]
 
 [tool.mypy]

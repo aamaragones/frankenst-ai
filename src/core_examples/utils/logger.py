@@ -1,6 +1,5 @@
 import logging
 import logging.config
-import os
 from typing import Any
 
 import yaml
@@ -8,9 +7,6 @@ import yaml
 from core_examples.config.settings import get_settings
 
 _LOGGING_CONFIGURED = False
-_SETTINGS = get_settings()
-CONFIG_LOGGING_FILE_PATH = _SETTINGS.config_logging_file_path
-DEFAULT_LOG_FILE_PATH = _SETTINGS.default_log_file_path
 
 
 def configure_logging(default_level: str = "INFO") -> logging.Logger:
@@ -19,8 +15,11 @@ def configure_logging(default_level: str = "INFO") -> logging.Logger:
     if _LOGGING_CONFIGURED:
         return logging.getLogger(__name__)
 
-    log_level = os.getenv("LOG_LEVEL", default_level).upper()
-    log_to_file = _read_env_flag("LOG_TO_FILE")
+    if hasattr(get_settings, "cache_clear"):
+        get_settings.cache_clear()
+    settings = get_settings()
+    log_level = (settings.log_level or default_level).upper()
+    log_to_file = settings.log_to_file
 
     try:
         logging.config.dictConfig(_build_logging_config(log_level, log_to_file))
@@ -31,14 +30,21 @@ def configure_logging(default_level: str = "INFO") -> logging.Logger:
             datefmt="%Y-%m-%d %H:%M:%S",
             force=True,
         )
-        logging.getLogger(__name__).exception("Failed to load backend logging configuration from YAML.")
+        logging.getLogger(__name__).exception("Failed to load logging configuration from YAML.")
 
     _LOGGING_CONFIGURED = True
     return logging.getLogger(__name__)
 
 
 def _build_logging_config(log_level: str, log_to_file: bool) -> dict[str, Any]:
-    with CONFIG_LOGGING_FILE_PATH.open("r", encoding="utf-8") as config_file:
+    settings = get_settings()
+    config_logging_file_path = settings.config_logging_file_path
+    default_log_file_path = settings.default_log_file_path
+
+    if config_logging_file_path is None:
+        raise RuntimeError("Core settings must provide a logging config file path.")
+
+    with config_logging_file_path.open("r", encoding="utf-8") as config_file:
         config = yaml.safe_load(config_file) or {}
 
     root_config = config.setdefault("root", {})
@@ -46,18 +52,22 @@ def _build_logging_config(log_level: str, log_to_file: bool) -> dict[str, Any]:
     root_config["handlers"] = ["console"]
 
     if log_to_file:
-        DEFAULT_LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if default_log_file_path is None:
+            raise RuntimeError("Core settings must provide a default log file path when file logging is enabled.")
+
+        default_log_file_path.parent.mkdir(parents=True, exist_ok=True)
         handlers = config.setdefault("handlers", {})
-        file_handler = handlers.setdefault("file", {})
-        file_handler["filename"] = str(DEFAULT_LOG_FILE_PATH)
+        file_handler = handlers.setdefault(
+            "file",
+            {
+                "class": "logging.FileHandler",
+                "formatter": "standard",
+                "filename": str(default_log_file_path),
+            },
+        )
+        file_handler.setdefault("class", "logging.FileHandler")
+        file_handler.setdefault("formatter", "standard")
+        file_handler["filename"] = str(default_log_file_path)
         root_config["handlers"].append("file")
 
     return config
-
-
-def _read_env_flag(name: str, default: bool = False) -> bool:
-    value = os.getenv(name)
-    if value is None:
-        return default
-
-    return value.strip().lower() in {"1", "true", "yes", "on"}

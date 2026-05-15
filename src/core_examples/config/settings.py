@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, model_validator
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,11 +17,21 @@ class CoreSettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_prefix="FRANKENST_",
+        env_prefix="FRANK_",
+        env_file=".env",
+        env_file_encoding="utf-8",
         extra="ignore",
     )
 
     core_package_path: Path = Field(default_factory=_default_core_package_path)
+    log_level: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("LOG_LEVEL", "FRANK_LOG_LEVEL"),
+    )
+    log_to_file: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("LOG_TO_FILE", "FRANK_LOG_TO_FILE"),
+    )
     src_directory_path: Path | None = None
     project_root_path: Path | None = None
     logs_directory_path: Path | None = None

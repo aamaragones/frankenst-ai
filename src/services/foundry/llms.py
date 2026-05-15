@@ -64,13 +64,22 @@ class LLMServices:
 	def _load_config(cls, config: dict[str, Any] | None = None) -> dict[str, Any]:
 		"""Load the central config and validate the launch selector section."""
 
-		settings = get_settings()
+		if config is not None:
+			config_source: str | object = "provided config"
+			resolved_config = config
+		else:
+			settings = get_settings()
+			config_file_path = settings.config_file_path
+			if config_file_path is None:
+				raise RuntimeError("Core settings must provide a config file path.")
+
+			config_source = config_file_path
+			resolved_config = read_yaml(config_file_path)
 
 		logger.info(
 			"Loading LLM runtime configuration from %s.",
-			"provided config" if config is not None else settings.config_file_path,
+			config_source,
 		)
-		resolved_config = config if config is not None else read_yaml(settings.config_file_path)
 		launch_config = resolved_config.get("launch")
 		if not isinstance(launch_config, dict):
 			raise RuntimeError("Missing config section for: launch")
@@ -149,6 +158,10 @@ class LLMServices:
 		This method intentionally validates only the local config contract and
 		leaves deeper client validation to `langchain_azure_ai`.
 
+		Runtime compatibility is delegated
+		to `langchain_azure_ai`, which is required because embeddings are known to
+		work here with `services.ai/openai/v1` and no explicit API version.
+
 		Azure AI Foundry's OpenAI-compatible wrapper enables Responses API by
 		default, but not every Azure region supports it yet. Default to classic
 		chat completions unless the repo config explicitly opts back in.
@@ -172,9 +185,15 @@ class LLMServices:
 			kwargs["credential"] = DefaultAzureCredential()
 
 		credential = kwargs.get("credential")
-		credential_type = type(credential).__name__ if credential is not None and not isinstance(credential, str) else credential if isinstance(credential, str) else None
+		if isinstance(credential, str):
+			credential_type = credential
+		elif credential is not None:
+			credential_type = type(credential).__name__
+		else:
+			credential_type = None
 		logger.info(
-			"Preparing Azure AI runtime for %s: model=%s project_endpoint=%s endpoint=%s api_version=%s use_responses_api=%s credential_type=%s",
+			"Preparing Azure AI runtime for %s: model=%s project_endpoint=%s endpoint=%s api_version=%s "
+			"use_responses_api=%s credential_type=%s",
 			config_path,
 			kwargs.get("model"),
 			kwargs.get("project_endpoint"),
@@ -209,13 +228,15 @@ class LLMServices:
 		runtime_config = cls._require(config, "azure_ai.model", as_section=True)
 		kwargs = cls._prepare_azure_ai_kwargs(runtime_config, "azure_ai.model")
 		model = AzureAIOpenAIApiChatModel(**kwargs)
+		client = getattr(model, "client", None)
+		async_client = getattr(model, "async_client", None)
 		logger.info(
 			"Loaded Azure AI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s",
 			"azure_ai.model",
 			type(model).__name__,
 			getattr(model, "model", kwargs.get("model")),
-			type(getattr(model, "client", None)).__name__ if getattr(model, "client", None) is not None else None,
-			type(getattr(model, "async_client", None)).__name__ if getattr(model, "async_client", None) is not None else None,
+			type(client).__name__ if client is not None else None,
+			type(async_client).__name__ if async_client is not None else None,
 		)
 		return model
 
@@ -224,13 +245,16 @@ class LLMServices:
 		runtime_config = cls._require(config, "azure_ai.embeddings", as_section=True)
 		kwargs = cls._prepare_azure_ai_kwargs(runtime_config, "azure_ai.embeddings")
 		embeddings = AzureAIOpenAIApiEmbeddingsModel(**kwargs)
+		client = getattr(embeddings, "client", None)
+		async_client = getattr(embeddings, "async_client", None)
 		logger.info(
-			"Loaded Azure AI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s has_embed_query=%s",
+			"Loaded Azure AI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s "
+			"has_embed_query=%s",
 			"azure_ai.embeddings",
 			type(embeddings).__name__,
 			getattr(embeddings, "model", kwargs.get("model")),
-			type(getattr(embeddings, "client", None)).__name__ if getattr(embeddings, "client", None) is not None else None,
-			type(getattr(embeddings, "async_client", None)).__name__ if getattr(embeddings, "async_client", None) is not None else None,
+			type(client).__name__ if client is not None else None,
+			type(async_client).__name__ if async_client is not None else None,
 			hasattr(embeddings, "embed_query"),
 		)
 		return embeddings
@@ -314,7 +338,8 @@ class LLMServices:
 			current_runtime = None if force_reload else cls._current_runtime()
 			if current_runtime is not None:
 				logger.info(
-					"LLMServices.launch found cached runtime after lock acquisition: model_class=%s embeddings_class=%s.",
+					"LLMServices.launch found cached runtime after lock acquisition: "
+					"model_class=%s embeddings_class=%s.",
 					type(current_runtime.model).__name__,
 					type(current_runtime.embeddings).__name__,
 				)

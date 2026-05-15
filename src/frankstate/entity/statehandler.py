@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable
 from typing import Any
 
 from langchain_core.messages import AnyMessage
@@ -38,7 +39,7 @@ class StateEvaluator(ABC):
             setattr(self, key, value)
 
     @abstractmethod
-    def evaluate(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> str:
+    def evaluate(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> str | Awaitable[str]:
         """Return the routing key used by a conditional edge path map.
 
         The returned value must match one of the keys declared in the
@@ -81,7 +82,7 @@ class StateEnhancer(ABC):
         
         
     @abstractmethod
-    def enhance(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> dict[str, Any]:
+    def enhance(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> dict[str, Any] | Awaitable[dict[str, Any]]:
         """Return a partial state update produced by runnable or custom enhance logic.
 
         The returned mapping is merged by LangGraph into the current state. The
