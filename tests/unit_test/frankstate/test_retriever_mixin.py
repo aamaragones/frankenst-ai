@@ -11,7 +11,7 @@ def test_retriever_mixin_prefers_explicit_retriever() -> None:
     retriever = object()
     builder = FakeRunnableBuilder(retriever=retriever)
 
-    assert builder.built_retriever is retriever
+    assert builder.retriever is retriever
 
 
 @pytest.mark.unit
@@ -20,8 +20,8 @@ def test_retriever_mixin_builds_from_vectordb_once() -> None:
     vectordb = FakeVectorStore(retriever=retriever)
     builder = FakeRunnableBuilder(vectordb=vectordb)
 
-    first = builder.built_retriever
-    second = builder.built_retriever
+    first = builder.retriever
+    second = builder.retriever
 
     assert first is retriever
     assert second is retriever
