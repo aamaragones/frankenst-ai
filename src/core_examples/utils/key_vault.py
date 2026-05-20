@@ -18,8 +18,8 @@ def _to_keyvault_name(name: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def _get_secret_client() -> SecretClient:
-    key_vault_name = os.getenv("AZURE_KEY_VAULT_NAME")
+def _get_secret_client(key_vault_name: str | None = None) -> SecretClient:
+    key_vault_name = key_vault_name or os.getenv("AZURE_KEY_VAULT_NAME")
     if not key_vault_name:
         raise OSError("AZURE_KEY_VAULT_NAME environment variable is not set")
 
@@ -27,7 +27,12 @@ def _get_secret_client() -> SecretClient:
     return SecretClient(vault_url=key_vault_uri, credential=DefaultAzureCredential())
 
 
-def get_secret(secret_name: str, *, required: bool = True) -> str | None:
+def get_secret(
+    secret_name: str,
+    *,
+    required: bool = True,
+    key_vault_name: str | None = None,
+) -> str | None:
     """
     Retrieve a secret value using a dual-source strategy:
     1. First attempts to read from environment variables.
@@ -36,13 +41,15 @@ def get_secret(secret_name: str, *, required: bool = True) -> str | None:
     This allows seamless usage across local development and cloud environments.
 
     Args:
-        secret_name (str):
-            The name of the secret in environment variable format
-            (e.g., 'AZURE_CLIENT_SECRET').
-        required (bool):
-            When ``True`` the lookup raises if the secret does not exist.
-            When ``False`` a missing secret resolves to ``None`` so callers can
-            fall back to managed identity or another default mechanism.
+        secret_name:
+            Setting or secret name to resolve, using the same identifier expected
+            in environment variables.
+        required:
+            When ``True`` a missing Key Vault secret raises an exception. When
+            ``False`` a missing secret resolves to ``None``.
+        key_vault_name:
+            Optional Key Vault name override. When omitted, the helper falls back
+            to ``AZURE_KEY_VAULT_NAME`` from the process environment.
 
     Returns:
         str | None:
@@ -51,7 +58,7 @@ def get_secret(secret_name: str, *, required: bool = True) -> str | None:
 
     Raises:
         EnvironmentError:
-            If the required Key Vault environment variable
+            If the required key_vault_name argument or environment variable
             'AZURE_KEY_VAULT_NAME' is not set.
 
         RuntimeError:
@@ -72,16 +79,15 @@ def get_secret(secret_name: str, *, required: bool = True) -> str | None:
         # Retrieves 'azure-client-secret' from Key Vault
 
     Notes:
-        - Requires 'AZURE_KEY_VAULT_NAME' to be set in environment.
-        - Uses DefaultAzureCredential for key vault client authentication.
-        - Naming conventions differ between environment variables and
-          Azure Key Vault secrets, so automatic mapping is applied.
+        Environment lookup uses ``secret_name`` as-is. Key Vault lookup maps the
+        same name to kebab-case, for example ``AZURE_CLIENT_SECRET`` becomes
+        ``azure-client-secret``.
     """
-    # Attempt to retrieve from environment variables
+
     if secret_value := os.getenv(secret_name):
         return secret_value
 
-    client = _get_secret_client()
+    client = _get_secret_client(key_vault_name)
     kv_secret_name = _to_keyvault_name(secret_name)
 
     try:

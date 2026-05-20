@@ -209,6 +209,13 @@ graph = workflow_builder.compile()
 
 The `graph` is still a LangGraph graph object produced through LangGraph's own runtime.
 
+## Repository Configuration
+
+Runtime configuration is centralized in two layers:
+
+- `src/core_examples/config/settings.py` resolves environment-based settings and exposes the core repository paths for `config.yml`, `config_nodes.yml` and `config_logging.yml`.
+- The YAML files keep the runtime graph, provider and logging templates. `settings.py` does not replace them; it centralizes their locations and the environment overrides around them.
+
 ## Repository Logging
 
 The repository now configures application logging through `configure_logging()` and the

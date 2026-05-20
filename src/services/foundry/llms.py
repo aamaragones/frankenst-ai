@@ -69,12 +69,8 @@ class LLMServices:
 			resolved_config = config
 		else:
 			settings = get_settings()
-			config_file_path = settings.config_file_path
-			if config_file_path is None:
-				raise RuntimeError("Core settings must provide a config file path.")
-
-			config_source = config_file_path
-			resolved_config = read_yaml(config_file_path)
+			config_source = settings.config_file_path
+			resolved_config = read_yaml(settings.config_file_path)
 
 		logger.info(
 			"Loading LLM runtime configuration from %s.",

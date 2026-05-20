@@ -18,8 +18,8 @@ def configure_logging(default_level: str = "INFO") -> logging.Logger:
     if hasattr(get_settings, "cache_clear"):
         get_settings.cache_clear()
     settings = get_settings()
-    log_level = (settings.log_level or default_level).upper()
-    log_to_file = settings.log_to_file
+    log_level = (settings.logging.level or default_level).upper()
+    log_to_file = settings.logging.to_file
 
     try:
         logging.config.dictConfig(_build_logging_config(log_level, log_to_file))
@@ -41,9 +41,6 @@ def _build_logging_config(log_level: str, log_to_file: bool) -> dict[str, Any]:
     config_logging_file_path = settings.config_logging_file_path
     default_log_file_path = settings.default_log_file_path
 
-    if config_logging_file_path is None:
-        raise RuntimeError("Core settings must provide a logging config file path.")
-
     with config_logging_file_path.open("r", encoding="utf-8") as config_file:
         config = yaml.safe_load(config_file) or {}
 
@@ -52,9 +49,6 @@ def _build_logging_config(log_level: str, log_to_file: bool) -> dict[str, Any]:
     root_config["handlers"] = ["console"]
 
     if log_to_file:
-        if default_log_file_path is None:
-            raise RuntimeError("Core settings must provide a default log file path when file logging is enabled.")
-
         default_log_file_path.parent.mkdir(parents=True, exist_ok=True)
         handlers = config.setdefault("handlers", {})
         file_handler = handlers.setdefault(

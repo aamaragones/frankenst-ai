@@ -13,10 +13,16 @@ import core_examples.utils.rag.local_chroma as local_chroma_module
 
 
 @dataclass
+class _FakeLoggingSettings:
+    level: str | None = None
+    to_file: bool = False
+
+
+@dataclass
 class _FakeSettings:
     """Minimal settings stub for logging tests — avoids pydantic-settings env resolution."""
-    log_level: str | None = None
-    log_to_file: bool = False
+
+    logging: _FakeLoggingSettings
     default_log_file_path: Path | None = None
     config_logging_file_path: Path | None = field(
         default_factory=lambda: Path(__file__).resolve().parents[2]
@@ -56,7 +62,10 @@ def test_save_text_to_artifact_uses_default_directory_without_constants_or_cwd(t
 
 def test_configure_logging_does_not_create_a_log_file_by_default(tmp_path: Path, monkeypatch) -> None:
     log_path = tmp_path / "logs" / "application.log"
-    fake_settings = _FakeSettings(log_level="INFO", log_to_file=False, default_log_file_path=log_path)
+    fake_settings = _FakeSettings(
+        logging=_FakeLoggingSettings(level="INFO", to_file=False),
+        default_log_file_path=log_path,
+    )
     monkeypatch.setattr(logger_module, "get_settings", lambda: fake_settings)
     monkeypatch.setattr(logger_module, "_LOGGING_CONFIGURED", False)
     root_logger = logging.getLogger()
@@ -73,7 +82,10 @@ def test_configure_logging_does_not_create_a_log_file_by_default(tmp_path: Path,
 
 def test_configure_logging_creates_a_log_file_when_enabled(tmp_path: Path, monkeypatch) -> None:
     log_path = tmp_path / "logs" / "application.log"
-    fake_settings = _FakeSettings(log_level="INFO", log_to_file=True, default_log_file_path=log_path)
+    fake_settings = _FakeSettings(
+        logging=_FakeLoggingSettings(level="INFO", to_file=True),
+        default_log_file_path=log_path,
+    )
     monkeypatch.setattr(logger_module, "get_settings", lambda: fake_settings)
     monkeypatch.setattr(logger_module, "_LOGGING_CONFIGURED", False)
     root_logger = logging.getLogger()
