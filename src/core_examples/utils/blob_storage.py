@@ -8,14 +8,14 @@ from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
-from core_examples.utils.key_vault import get_secret
+from core_examples.config.settings import get_settings
 
 
 @lru_cache(maxsize=1)
 def get_blob_service_client() -> BlobServiceClient:
-    storage_account_name = get_secret("AZURE_BLOB_STORAGE_NAME")
+    storage_account_name = get_settings().azure.blob_storage_name
     if not storage_account_name:
-        raise ValueError("AZURE_BLOB_STORAGE_NAME secret not found")
+        raise ValueError("Azure blob storage account name is not configured")
     return BlobServiceClient(
         account_url=f"https://{storage_account_name}.blob.core.windows.net",
         credential=DefaultAzureCredential(),

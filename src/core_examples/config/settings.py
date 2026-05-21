@@ -1,7 +1,11 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field  #, SecretStr, AnyHttpUrl
+from pydantic import (
+    AliasChoices,
+    Field,
+    SecretStr,
+)
 from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
@@ -28,37 +32,11 @@ class DomainSettings(BaseSettings):
     )
 
 
-class LoggingSettings(DomainSettings):
-    level: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("LOG_LEVEL", "FRANK_LOG_LEVEL"),
-    )
-    to_file: bool = Field(
-        default=False,
-        validation_alias=AliasChoices("LOG_TO_FILE", "FRANK_LOG_TO_FILE"),
-    )
-
-
-class AzureSettings(DomainSettings):
-    blob_storage_name: str | None = Field(
-        default=None,
-        validation_alias="AZURE_BLOB_STORAGE_NAME",
-        json_schema_extra={"key_vault_fallback": True},
-    )
+class SecretBackedSettings(DomainSettings):
     key_vault_name: str | None = Field(
         default=None,
         validation_alias="AZURE_KEY_VAULT_NAME",
     )
-    # NOTE: The following settings are examples of how additional Azure-related secrets could be configured with Key Vault fallback
-    #     default=None,
-    #     validation_alias="AZURE-FUNCTION-APP-API-KEY",
-    #     json_schema_extra={"key_vault_fallback": True},
-    # )
-    # agents_function_app_base_url: AnyHttpUrl | None = Field(
-    #     default=None,
-    #     validation_alias="AZURE-FUNCTION-APP-BASE-URL",
-    #     json_schema_extra={"key_vault_fallback": True},
-    # )
 
     @classmethod
     def settings_customise_sources(
@@ -75,6 +53,50 @@ class AzureSettings(DomainSettings):
             dotenv_settings,
             KeyVaultFallbackSettingsSource(settings_cls),
             file_secret_settings,
+        )
+
+
+class LoggingSettings(DomainSettings):
+    level: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("LOG_LEVEL", "FRANK_LOG_LEVEL"),
+    )
+    to_file: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("LOG_TO_FILE", "FRANK_LOG_TO_FILE"),
+    )
+
+
+class AzureSettings(SecretBackedSettings):
+    blob_storage_name: str | None = Field(
+        default=None,
+        validation_alias="AZURE_BLOB_STORAGE_NAME",
+        json_schema_extra={"key_vault_fallback": True},
+    )
+    # NOTE: The following settings are examples of how additional
+    # Azure-related secrets could be configured with Key Vault fallback.
+    # agents_function_app_api_key: SecretStr | None = Field(
+    #     default=None,
+    #     validation_alias="AZURE-FUNCTION-APP-API-KEY",
+    #     json_schema_extra={"key_vault_fallback": True},
+    # )
+    # agents_function_app_base_url: AnyHttpUrl | None = Field(
+    #     default=None,
+    #     validation_alias="AZURE-FUNCTION-APP-BASE-URL",
+    #     json_schema_extra={"key_vault_fallback": True},
+    # )
+    telemetry_connection_string: SecretStr | None = Field(
+        default=None,
+        validation_alias="APPLICATION_INSIGHTS_CONNECTION_STRING",
+        json_schema_extra={"key_vault_fallback": True},
+    )
+
+    @property
+    def telemetry_connection_string_value(self) -> str | None:
+        return (
+            value.get_secret_value()
+            if (value := self.telemetry_connection_string) is not None
+            else None
         )
 
 

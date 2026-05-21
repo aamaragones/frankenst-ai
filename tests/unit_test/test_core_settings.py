@@ -78,6 +78,12 @@ def test_core_settings_expose_nested_domains(monkeypatch) -> None:
     monkeypatch.setenv("LOG_LEVEL", "ERROR")
     monkeypatch.setenv("AZURE_KEY_VAULT_NAME", "frankenst-kv")
     monkeypatch.setenv("AZURE_BLOB_STORAGE_NAME", "blob-from-env")
+    monkeypatch.setenv("APPLICATION_INSIGHTS_CONNECTION_STRING", "telemetry-from-env")
+    monkeypatch.setattr(
+        settings_module,
+        "get_secret",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("Key Vault should not be called")),
+    )
 
     settings = get_settings()
 
@@ -106,6 +112,7 @@ def test_azure_settings_can_fall_back_to_key_vault_for_blob_storage_name(monkeyp
 
 def test_azure_settings_prefer_env_before_key_vault_fallback(monkeypatch) -> None:
     monkeypatch.setenv("AZURE_BLOB_STORAGE_NAME", "blob-from-env")
+    monkeypatch.setenv("APPLICATION_INSIGHTS_CONNECTION_STRING", "telemetry-from-env")
     monkeypatch.setattr(
         settings_module,
         "get_secret",
@@ -115,3 +122,35 @@ def test_azure_settings_prefer_env_before_key_vault_fallback(monkeypatch) -> Non
     settings = AzureSettings(key_vault_name="frankenst-kv")
 
     assert settings.blob_storage_name == "blob-from-env"
+
+
+def test_azure_settings_can_fall_back_to_key_vault_for_telemetry_connection_string(monkeypatch) -> None:
+    monkeypatch.delenv("APPLICATION_INSIGHTS_CONNECTION_STRING", raising=False)
+    monkeypatch.setattr(
+        settings_module,
+        "get_secret",
+        lambda secret_name, *, required=False, key_vault_name=None: "telemetry-from-kv"
+        if secret_name == "APPLICATION_INSIGHTS_CONNECTION_STRING"
+        and key_vault_name == "frankenst-kv"
+        else None,
+    )
+
+    settings = AzureSettings(key_vault_name="frankenst-kv")
+
+    assert settings.telemetry_connection_string is not None
+    assert settings.telemetry_connection_string.get_secret_value() == "telemetry-from-kv"
+    assert settings.telemetry_connection_string_value == "telemetry-from-kv"
+
+
+def test_azure_settings_prefer_env_for_telemetry_before_key_vault_fallback(monkeypatch) -> None:
+    monkeypatch.setenv("AZURE_BLOB_STORAGE_NAME", "blob-from-env")
+    monkeypatch.setenv("APPLICATION_INSIGHTS_CONNECTION_STRING", "telemetry-from-env")
+    monkeypatch.setattr(
+        settings_module,
+        "get_secret",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("Key Vault should not be called")),
+    )
+
+    settings = AzureSettings(key_vault_name="frankenst-kv")
+
+    assert settings.telemetry_connection_string_value == "telemetry-from-env"
