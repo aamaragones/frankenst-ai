@@ -98,17 +98,17 @@ class AISearchAdaptiveRAGConfigGraph(GraphLayout):
         self.GENERATION_NODE = SimpleNode(
             enhancer=GenerateAnswerAsyncInvoke(self.GENERARION_CHAIN),
             name=self.CONFIG_NODES["GENERATION_NODE"]["name"],
-            tags=[self.CONFIG_NODES["GENERATION_NODE"]["description"]],
+            metadata=self.CONFIG_NODES["GENERATION_NODE"]["metadata"],
         )
         self.RETRIEVER_NODE = SimpleNode(
             enhancer=RetrieveContextAISearch(retriever=self.RAW_RETRIEVER),
             name=self.CONFIG_NODES["RETRIEVER_NODE"]["name"],
-            tags=[self.CONFIG_NODES["RETRIEVER_NODE"]["description"]],
+            metadata=self.CONFIG_NODES["RETRIEVER_NODE"]["metadata"],
         )
         self.REWRITE_NODE = SimpleNode(
             enhancer=RewriteQuestionAsyncInvoke(self.REWRITE_CHAIN),
             name=self.CONFIG_NODES["REWRITE_NODE"]["name"],
-            tags=[self.CONFIG_NODES["REWRITE_NODE"]["description"]],
+            metadata=self.CONFIG_NODES["REWRITE_NODE"]["metadata"],
         )
 
         ## EDGES

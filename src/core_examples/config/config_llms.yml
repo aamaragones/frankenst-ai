@@ -8,7 +8,7 @@
 
 ollama:
   model:
-    model: gemma4:e4b # ministral-3:8b
+    model: gemma4:e4b-it-qat # qwen3.5:9b-q4_K_M
     temperature: 0
   embeddings:
     model: embeddinggemma

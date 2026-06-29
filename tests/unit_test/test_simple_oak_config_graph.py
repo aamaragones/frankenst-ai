@@ -1,7 +1,6 @@
 import asyncio
 
 from langchain_core.messages import HumanMessage
-from langgraph.prebuilt import ToolNode
 
 from core_examples.components.edges.evaluators.route_tool_condition import (
     RouteToolCondition,
@@ -14,7 +13,7 @@ from core_examples.config.layouts import simple_oak_config_graph as simple_oak_m
 from core_examples.models.stategraph.stategraph import SharedState
 from frankstate import WorkflowBuilder
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
-from frankstate.entity.node import SimpleNode
+from frankstate.entity.node import SimpleNode, ToolGraphNode
 from tests.support.core_doubles import ToolBindingFakeModel
 
 
@@ -56,9 +55,13 @@ def test_simple_oak_config_graph_declares_nodes_edges_and_runnable_builders(monk
     assert [node.name for node in nodes] == ["OakLangAgent", "OakTools"]
     assert isinstance(nodes[0], SimpleNode)
     assert isinstance(nodes[0].enhancer, SimpleMessagesAsyncInvoke)
-    assert isinstance(nodes[1], ToolNode)
-    assert nodes[0].tags == ["Main agent node. It binds tools and produces the next assistant message."]
-    assert nodes[1].tags == ["ToolNode executed when the OakLangAgent node emits tool calls."]
+    assert isinstance(nodes[1], ToolGraphNode)
+    assert nodes[0].kwargs == {
+        "metadata": {"description": "Main agent node. It binds tools and produces the next assistant message."}
+    }
+    assert nodes[1].kwargs == {
+        "metadata": {"description": "Tool node executed when the OakLangAgent node emits tool calls."}
+    }
 
     assert len(edges) == 3
     assert isinstance(edges[0], SimpleEdge)
@@ -90,5 +93,5 @@ def test_simple_oak_config_graph_compiles_and_runs_with_workflow_builder(monkeyp
         "__end__",
     }
     assert compiled.get_graph().nodes["OakLangAgent"].metadata == {
-        "tags": ["Main agent node. It binds tools and produces the next assistant message."]
+        "description": "Main agent node. It binds tools and produces the next assistant message."
     }

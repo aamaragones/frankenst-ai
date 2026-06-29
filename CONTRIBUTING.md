@@ -9,7 +9,7 @@ This repository contains three different layers:
 - `src/services`: runtime integrations and deployment-facing adapters.
 - `research`: exploratory material that can inform future work but is not part of the repository's contractual surface.
 
-Keep those boundaries explicit in pull requests.
+Keep those boundaries explicit in pull requests. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the contracts and invariants behind these layers.
 
 ## Local setup
 

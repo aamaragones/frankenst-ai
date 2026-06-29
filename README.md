@@ -29,6 +29,8 @@ This repository is a mono-repo with four layers and different expectations of st
 
 If you are evaluating the repository, start with `src/frankstate`, then move to `src/core_examples`, and only read `src/services` when you need integration-specific entrypoints.
 
+For the design rationale, contracts and build flow, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
+
 ## How Frankenst-AI Maps to LangGraph
 
 Frankenst-AI keeps the official LangGraph runtime model and adds a small layer
@@ -213,7 +215,7 @@ The `graph` is still a LangGraph graph object produced through LangGraph's own r
 
 Runtime configuration is centralized in two layers:
 
-- `src/core_examples/config/settings.py` resolves environment-based settings and exposes the core repository paths for `config.yml`, `config_nodes.yml` and `config_logging.yml`.
+- `src/core_examples/config/settings.py` resolves environment-based settings and exposes the core repository paths for `config_llms.yml`, `config_nodes.yml` and `config_logging.yml`.
 - The YAML files keep the runtime graph, provider and logging templates. `settings.py` does not replace them; it centralizes their locations and the environment overrides around them.
 
 ## Repository Logging
@@ -302,7 +304,7 @@ frankenst-ai/
 │   │   │   ├── retrievers/           # Retrievers definitions, builders and integrations
 │   │   │   └── runnables/            # Executable LangChain RunnableBuilder modules for invoke or ainvoke logic
 │   │   ├── config/
-│   │   │   ├── config.yml            # Main runtime configuration file for the project
+│   │   │   ├── config_llms.yml       # Main LLM/runtime configuration file for the project
 │   │   │   ├── config_nodes.yml      # Node registry used by the example graph layouts
 │   │   │   └── layouts/              # Reference GraphLayout subclasses using build_runtime() + layout()
 │   │   ├── models/                   # Structural models: StateGraph, tool properties, structured outputs, etc.

@@ -69,8 +69,8 @@ class LLMServices:
 			resolved_config = config
 		else:
 			settings = get_settings()
-			config_source = settings.config_file_path
-			resolved_config = read_yaml(settings.config_file_path)
+			config_source = settings.config_llms_file_path
+			resolved_config = read_yaml(settings.config_llms_file_path)
 
 		logger.info(
 			"Loading LLM runtime configuration from %s.",

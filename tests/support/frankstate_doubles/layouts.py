@@ -5,7 +5,7 @@ from langgraph.prebuilt import ToolNode
 
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.graph_layout import GraphLayout
-from frankstate.entity.node import CommandNode, SimpleNode
+from frankstate.entity.node import CommandNode, SimpleNode, ToolGraphNode
 from tests.support.frankstate_doubles.builders import FakeRunnableBuilder
 from tests.support.frankstate_doubles.stub import (
     AsyncFieldRouteEvaluator,
@@ -30,7 +30,7 @@ class FrankTestState(MessagesState):
 class LinearAsyncLayout(GraphLayout):
     RUNNABLE_BUILDER: FakeRunnableBuilder
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runtime_calls = 0
         self.layout_calls = 0
@@ -46,14 +46,14 @@ class LinearAsyncLayout(GraphLayout):
         self.LINEAR_NODE = SimpleNode(
             enhancer=RunnableMessageEnhancer(runnable_builder=self.RUNNABLE_BUILDER),
             name="linear_node",
-            tags=["linear"],
+            metadata={"tags": ["linear"]},
         )
         self.START_EDGE = SimpleEdge(node_source=START, node_path=self.LINEAR_NODE.name)
         self.END_EDGE = SimpleEdge(node_source=self.LINEAR_NODE.name, node_path=END)
 
 
 class ConditionalAsyncLayout(GraphLayout):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runtime_calls = 0
         self.layout_calls = 0
@@ -67,17 +67,17 @@ class ConditionalAsyncLayout(GraphLayout):
         self.ROUTER_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("router"),
             name="router_node",
-            tags=["router"],
+            metadata={"tags": ["router"]},
         )
         self.ACCEPT_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("accepted"),
             name="accept_node",
-            tags=["accept"],
+            metadata={"tags": ["accept"]},
         )
         self.REJECT_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("rejected"),
             name="reject_node",
-            tags=["reject"],
+            metadata={"tags": ["reject"]},
         )
 
         self.START_EDGE = SimpleEdge(node_source=START, node_path=self.ROUTER_NODE.name)
@@ -94,7 +94,7 @@ class ConditionalAsyncLayout(GraphLayout):
 
 
 class ConditionalAsyncEvaluatorLayout(GraphLayout):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runtime_calls = 0
         self.layout_calls = 0
@@ -108,17 +108,17 @@ class ConditionalAsyncEvaluatorLayout(GraphLayout):
         self.ROUTER_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("router"),
             name="router_node",
-            tags=["router"],
+            metadata={"tags": ["router"]},
         )
         self.ACCEPT_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("accepted"),
             name="accept_node",
-            tags=["accept"],
+            metadata={"tags": ["accept"]},
         )
         self.REJECT_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("rejected"),
             name="reject_node",
-            tags=["reject"],
+            metadata={"tags": ["reject"]},
         )
 
         self.START_EDGE = SimpleEdge(node_source=START, node_path=self.ROUTER_NODE.name)
@@ -135,7 +135,7 @@ class ConditionalAsyncEvaluatorLayout(GraphLayout):
 
 
 class CommandAsyncLayout(GraphLayout):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runtime_calls = 0
         self.layout_calls = 0
@@ -154,17 +154,17 @@ class CommandAsyncLayout(GraphLayout):
                 }
             ),
             name="command_node",
-            tags=["command"],
+            metadata={"tags": ["command"]},
         )
         self.ACCEPT_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("accepted"),
             name="accept_node",
-            tags=["accept"],
+            metadata={"tags": ["accept"]},
         )
         self.REJECT_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("rejected"),
             name="reject_node",
-            tags=["reject"],
+            metadata={"tags": ["reject"]},
         )
 
         self.START_EDGE = SimpleEdge(node_source=START, node_path=self.COMMAND_NODE.name)
@@ -175,7 +175,7 @@ class CommandAsyncLayout(GraphLayout):
 class LinearSyncLayout(GraphLayout):
     RUNNABLE_BUILDER: FakeRunnableBuilder
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runtime_calls = 0
         self.layout_calls = 0
@@ -191,14 +191,14 @@ class LinearSyncLayout(GraphLayout):
         self.LINEAR_NODE = SimpleNode(
             enhancer=SyncRunnableMessageEnhancer(runnable_builder=self.RUNNABLE_BUILDER),
             name="linear_sync_node",
-            tags=["linear-sync"],
+            metadata={"tags": ["linear-sync"]},
         )
         self.START_EDGE = SimpleEdge(node_source=START, node_path=self.LINEAR_NODE.name)
         self.END_EDGE = SimpleEdge(node_source=self.LINEAR_NODE.name, node_path=END)
 
 
 class ToolLoopLayout(GraphLayout):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runtime_calls = 0
         self.layout_calls = 0
@@ -212,17 +212,20 @@ class ToolLoopLayout(GraphLayout):
         self.AGENT_NODE = SimpleNode(
             enhancer=ToolCallingEnhancer(),
             name="agent_node",
-            tags=["agent"],
+            metadata={"tags": ["agent"]},
         )
-        self.TOOL_NODE = ToolNode(
-            tools=[uppercase_text],
-            name="tool_node",
-            tags=["tool"],
+        self.TOOL_NODE = ToolGraphNode(
+            tool_node=ToolNode(
+                tools=[uppercase_text],
+                name="tool_node",
+                tags=["tool"],
+            ),
+            metadata={"tags": ["tool"]},
         )
         self.SUMMARY_NODE = SimpleNode(
             enhancer=ToolSummaryEnhancer(),
             name="summary_node",
-            tags=["summary"],
+            metadata={"tags": ["summary"]},
         )
 
         self.START_EDGE = SimpleEdge(node_source=START, node_path=self.AGENT_NODE.name)

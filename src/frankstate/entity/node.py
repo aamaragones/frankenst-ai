@@ -1,48 +1,66 @@
+"""Node wrapper definitions consumed by GraphLayout and NodeManager."""
+
+import inspect
 from typing import Any
 
+from langgraph.graph import StateGraph
+from langgraph.prebuilt import ToolNode
+
 from frankstate.entity.statehandler import StateCommander, StateEnhancer
+
+_ADD_NODE_KWARGS: frozenset[str] = frozenset(
+    name
+    for name, parameter in inspect.signature(StateGraph.add_node).parameters.items()
+    if parameter.kind is inspect.Parameter.KEYWORD_ONLY
+)
 
 
 class BaseNode:
     """Base named node definition consumed by GraphLayout and NodeManager.
 
-    `tags` is the common user-facing annotation surface for `frankstate` nodes.
-    LangGraph's native `ToolNode` already exposes `tags`, while `StateGraph.add_node()`
-    expects generic keyword arguments such as `metadata`. `frankstate` keeps
-    `tags` as the standard layout field for all node types and later projects it
-    into `metadata["tags"]` for wrapper nodes during workflow assembly.
+    Extra keyword arguments are collected into `kwargs` and forwarded verbatim to
+    `StateGraph.add_node()` (for example `metadata`, `retry_policy`, `cache_policy`,
+    `timeout`, `defer` or `destinations`). Accepting them as `**kwargs` keeps call
+    sites flush with LangGraph's own `add_node()` surface instead of nesting a
+    dictionary argument.
 
-    `kwargs` stores future-facing keyword arguments that should be forwarded to
-    `StateGraph.add_node()` without forcing `frankstate` to predefine every
-    native option in its own constructor surface.
+    To keep that ergonomics safe, every key is validated against the keyword-only
+    parameters of `StateGraph.add_node()` at construction time. An unknown option
+    (including a typo in a node argument that would otherwise be swallowed) raises
+    a `TypeError` immediately at the call site rather than failing later during
+    `compile()`.
     """
 
-    def __init__(self, name: str, tags: list[str] | None = None, kwargs: dict[str, Any] | None = None):
+    def __init__(self, name: str, **kwargs: Any):
+        unsupported = kwargs.keys() - _ADD_NODE_KWARGS
+        if unsupported:
+            raise TypeError(
+                f"{type(self).__name__} received unsupported add_node option(s) "
+                f"{sorted(unsupported)}. Supported options: {sorted(_ADD_NODE_KWARGS)}."
+            )
         self.name = name
-        self.tags = tags
-        self.kwargs = dict(kwargs) if kwargs else None
+        self.kwargs: dict[str, Any] = kwargs
 
 class SimpleNode(BaseNode):
     """Node wrapper for a StateEnhancer callable.
 
-    Optional `kwargs` are passed through to `StateGraph.add_node()` by the
-    workflow builder after `frankstate` merges its own `tags` convention.
+    Extra keyword arguments are passed through to `StateGraph.add_node()` by the
+    workflow builder.
     """
 
     def __init__(
         self,
         enhancer: StateEnhancer,
         name: str,
-        tags: list[str] | None = None,
-        kwargs: dict[str, Any] | None = None,
+        **kwargs: Any,
     ):
-        super().__init__(name, tags=tags, kwargs=kwargs)
+        super().__init__(name, **kwargs)
         self.enhancer = enhancer
 
 class CommandNode(BaseNode):
     """Node wrapper for a StateCommander callable returning Command.
 
-    Optional `kwargs` are passed through to `StateGraph.add_node()`, but
+    Extra keyword arguments are passed through to `StateGraph.add_node()`, but
     `destinations` remains controlled by the commander contract so graph
     rendering stays consistent with the `Command.goto` targets.
     """
@@ -51,8 +69,7 @@ class CommandNode(BaseNode):
         self,
         commander: StateCommander,
         name: str,
-        tags: list[str] | None = None,
-        kwargs: dict[str, Any] | None = None,
+        **kwargs: Any,
     ):
         try:
             _ = commander.destinations
@@ -62,7 +79,7 @@ class CommandNode(BaseNode):
                 "or a constructor-populated '_destinations' attribute where values are the "
                 "registered names of destination nodes. See StateCommander docstring for the convention."
             ) from exc
-        super().__init__(name, tags=tags, kwargs=kwargs)
+        super().__init__(name, **kwargs)
         self.commander = commander
 
     @property
@@ -74,3 +91,25 @@ class CommandNode(BaseNode):
         This is only used for graph rendering and has no effect on graph execution.
         """
         return tuple(self.commander.destinations.values())
+
+class ToolGraphNode(BaseNode):
+    """Node wrapper for a native LangGraph `ToolNode`.
+
+    The wrapped `tool_node` is the action added to the graph, so its own
+    `tags` and `name` are preserved by LangGraph. The wrapper exists only to
+    give the tool node the same `kwargs` pass-through surface as the other
+    node wrappers, allowing `add_node` options such as `metadata`,
+    `retry_policy` or `timeout` to travel with the tool node from GraphLayout.
+    """
+
+    def __init__(
+        self,
+        tool_node: ToolNode,
+        name: str | None = None,
+        **kwargs: Any,
+    ):
+        if tool_node is None:
+            raise ValueError("ToolGraphNode requires a non-null 'tool_node'.")
+        super().__init__(name or tool_node.name, **kwargs)
+        self.tool_node = tool_node
+

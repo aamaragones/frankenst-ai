@@ -1,11 +1,11 @@
+"""Base GraphLayout contract for declaring nodes, edges and runtime."""
+
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, get_type_hints
 
-from langgraph.prebuilt import ToolNode
-
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
-from frankstate.entity.node import CommandNode, SimpleNode
+from frankstate.entity.node import CommandNode, SimpleNode, ToolGraphNode
 from frankstate.entity.runnable_builder import RunnableBuilder
 
 
@@ -22,7 +22,7 @@ class GraphLayout(ABC):
 
     logger: logging.Logger = logging.getLogger(__name__)
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.runtime: dict[str, Any] | None = None
         self._runtime_built: bool = False
         self._layout_built: bool = False
@@ -94,9 +94,9 @@ class GraphLayout(ABC):
             if isinstance(attr_value, expected_type)
         ]
 
-    def get_nodes(self) -> list[SimpleNode | CommandNode | ToolNode]:
+    def get_nodes(self) -> list[SimpleNode | CommandNode | ToolGraphNode]:
         """Return concrete nodes preserving the layout declaration order."""
-        return self._filter_attributes((SimpleNode, CommandNode, ToolNode))
+        return self._filter_attributes((SimpleNode, CommandNode, ToolGraphNode))
 
     def get_edges(self) -> list[SimpleEdge | ConditionalEdge]:
         """Return concrete edges for the current layout instance."""

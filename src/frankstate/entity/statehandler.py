@@ -1,3 +1,5 @@
+"""State handler contracts: evaluators, enhancers and commanders."""
+
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable
 from typing import Any

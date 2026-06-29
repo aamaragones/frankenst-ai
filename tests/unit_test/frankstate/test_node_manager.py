@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from langgraph.prebuilt import ToolNode
 
-from frankstate.entity.node import CommandNode, SimpleNode
+from frankstate.entity.node import CommandNode, SimpleNode, ToolGraphNode
 from frankstate.managers.node_manager import NodeManager
 from tests.support.frankstate_doubles.stub import (
     MissingDestinationsCommander,
@@ -52,20 +52,28 @@ def test_command_node_requires_destinations_attribute() -> None:
 
 
 @pytest.mark.unit
-def test_configs_nodes_resolve_wrapper_callables_tags_and_destinations() -> None:
+def test_node_rejects_unsupported_add_node_option_at_construction() -> None:
+    with pytest.raises(TypeError, match="unsupported add_node option"):
+        SimpleNode(StaticMessageEnhancer("simple"), name="simple_node", retry_polcy=None)
+
+
+@pytest.mark.unit
+def test_configs_nodes_resolve_wrapper_callables_metadata_and_destinations() -> None:
     manager = NodeManager()
     simple = SimpleNode(
         enhancer=StaticMessageEnhancer("simple"),
         name="simple_node",
-        tags=["simple"],
-        kwargs={"defer": True, "metadata": {"owner": "simple"}},
+        defer=True,
+        metadata={"owner": "simple"},
     )
     command = CommandNode(
         commander=RoutingCommander(destinations={"accept": "final_node"}),
         name="command_node",
-        tags=["command"],
     )
-    tool_node = ToolNode([uppercase_text], name="tool_node", tags=["tool"])
+    tool_node = ToolGraphNode(
+        tool_node=ToolNode([uppercase_text], name="tool_node", tags=["tool"]),
+        metadata={"tags": ["tool"]},
+    )
 
     manager.add_nodes([simple, command, tool_node])
     configs = manager.configs_nodes()
@@ -81,19 +89,18 @@ def test_configs_nodes_resolve_wrapper_callables_tags_and_destinations() -> None
     assert simple_name == "simple_node"
     assert simple_kwargs == {
         "defer": True,
-        "metadata": {"owner": "simple", "tags": ["simple"]},
+        "metadata": {"owner": "simple"},
     }
     assert asyncio.run(simple_action({"messages": []}))["messages"][-1].content == "simple"
 
     assert command_name == "command_node"
     assert command_kwargs == {
-        "metadata": {"tags": ["command"]},
         "destinations": ("final_node",),
     }
     assert command_action({"decision": "accept"}).goto == "final_node"
 
     assert tool_name == "tool_node"
-    assert tool_action is tool_node
+    assert tool_action is tool_node.tool_node
     assert tool_kwargs == {"metadata": {"tags": ["tool"]}}
 
 
@@ -103,7 +110,7 @@ def test_configs_nodes_reject_conflicting_command_destinations_in_kwargs() -> No
     command = CommandNode(
         commander=RoutingCommander(destinations={"accept": "final_node"}),
         name="command_node",
-        kwargs={"destinations": ("other_node",)},
+        destinations=("other_node",),
     )
 
     manager.add_nodes(command)

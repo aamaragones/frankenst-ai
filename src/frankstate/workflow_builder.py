@@ -1,3 +1,5 @@
+"""WorkflowBuilder: assembles a LangGraph StateGraph from a GraphLayout."""
+
 import logging
 from typing import Any
 
@@ -28,7 +30,7 @@ class WorkflowBuilder:
         self,
         config: type[GraphLayout],
         state_schema: type[Any],
-        checkpointer: BaseCheckpointSaver | None = None,
+        checkpointer: BaseCheckpointSaver[Any] | None = None,
         input_schema: type[Any] | None = None,
         output_schema: type[Any] | None = None,
     ):
@@ -41,12 +43,12 @@ class WorkflowBuilder:
             input_schema: Optional input schema forwarded to `StateGraph`.
             output_schema: Optional output schema forwarded to `StateGraph`.
         """
-        self.workflow: StateGraph = StateGraph(
+        self.workflow: StateGraph[Any, Any, Any, Any] = StateGraph(
             state_schema=state_schema,
             input_schema=input_schema,
             output_schema=output_schema,
         )
-        self.memory: BaseCheckpointSaver | None = checkpointer
+        self.memory: BaseCheckpointSaver[Any] | None = checkpointer
 
         if not isinstance(config, type) or not issubclass(config, GraphLayout):
             raise TypeError(
@@ -63,45 +65,32 @@ class WorkflowBuilder:
             config.__name__,
         )
 
-    def compile(self) -> CompiledStateGraph:
+    def compile(self) -> CompiledStateGraph[Any, Any, Any, Any]:
         """Configure nodes and edges declared in the layout, then compile the graph."""
         self._ensure_workflow_configured()
         return self.workflow.compile(checkpointer=self.memory)
-    
-    def display_graph(self, save: bool = False, filepath: str = "graph.png") -> None:
-        """Render the compiled graph as a Mermaid PNG for notebook workflows.
 
-        This helper is optional and primarily intended for notebook or ad hoc
-        artifact generation. Rendering requires `IPython` plus LangChain's
-        Mermaid graph helper, and the default Mermaid API draw method may also
-        require network access depending on the execution environment.
+    def to_mermaid(self, with_metadata: bool = False) -> str:
+        """Return the compiled graph as Mermaid text.
+
+        This is the default, dependency-free representation: it relies only on
+        LangGraph/LangChain core, needs no network access and produces a
+        deterministic string suitable for documentation or diffs.
+
+        Node `metadata` declared through layout `kwargs` would otherwise be
+        inlined into every node label by the Mermaid renderer. By default that
+        metadata is cleared so the diagram shows only node names.
 
         Args:
-            save: When `True`, write the PNG bytes to `filepath` instead of
-                displaying them inline.
-            filepath: Target path used when `save=True`.
-
-        Raises:
-            ImportError: If notebook-oriented visualization dependencies are
-                not installed in the active environment.
+            with_metadata: When `True`, keep node metadata in the rendered
+                labels. Defaults to `False` for a clean diagram showing only
+                node names.
         """
-        try:
-            from IPython.display import Image, display
-            from langchain_core.runnables.graph import MermaidDrawMethod
-        except ImportError as exc:
-            raise ImportError(
-                "display_graph() requires notebook dependencies to render Mermaid diagrams."
-            ) from exc
-
-        temp_graph = self.compile()
-        img_data = temp_graph.get_graph().draw_mermaid_png(draw_method=MermaidDrawMethod.API,)
-
-        if save:
-            with open(filepath, "wb") as f:
-                f.write(img_data)
-            return
-
-        display(Image(img_data))
+        graph = self.compile().get_graph()
+        if not with_metadata:
+            for node_id, node in list(graph.nodes.items()):
+                graph.nodes[node_id] = node._replace(metadata=None)
+        return graph.draw_mermaid()
 
     def _ensure_workflow_configured(self) -> None:
         """Configure the workflow once before any compile or visualization step."""

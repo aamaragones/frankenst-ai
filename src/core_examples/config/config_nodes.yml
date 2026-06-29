@@ -4,7 +4,8 @@
 # - `id`:          registry key used in layouts (e.g. CONFIG_NODES["OAKLANG_NODE"]).
 # - `name`:        runtime name passed to LangGraph node constructors.
 # - `type`:        documentation-only role (`enhancer`, `tools`, `commander`).
-# - `description`: short explanation of the node responsibility.
+# - `metadata`:    dict forwarded verbatim to StateGraph.add_node(metadata=...).
+#                   Holds the node `description` and any other annotation.
 # - `destinations`: mapping used by StateCommander subclasses.
 #                   Values are the literal destination node names — no placeholders.
 
@@ -15,17 +16,20 @@ nodes:
   - id: OAKLANG_NODE
     name: OakLangAgent
     type: enhancer
-    description: Main agent node. It binds tools and produces the next assistant message.
+    metadata:
+      description: Main agent node. It binds tools and produces the next assistant message.
 
   - id: OAKTOOLS_NODE
     name: OakTools
     type: tools
-    description: ToolNode executed when the OakLangAgent node emits tool calls.
+    metadata:
+      description: Tool node executed when the OakLangAgent node emits tool calls.
 
   - id: HUMAN_REVIEW_NODE
     name: HumanReview
     type: commander
-    description: Command node that routes to tools or back to the enhancer after human review.
+    metadata:
+      description: Command node that routes to tools or back to the enhancer after human review.
     destinations:
       enhancer: OakLangAgent
       tools: OakTools
@@ -35,14 +39,17 @@ nodes:
   - id: GENERATION_NODE
     name: GenerationNode
     type: enhancer
-    description: Node that generates the final answer from the current question and retrieved context.
+    metadata:
+      description: Node that generates the final answer from the current question and retrieved context.
 
   - id: RETRIEVER_NODE
     name: RetrieverNode
     type: enhancer
-    description: Node that retrieves context for the current question.
+    metadata:
+      description: Node that retrieves context for the current question.
 
   - id: REWRITE_NODE
     name: RewriteNode
     type: enhancer
-    description: Node that rewrites the question before another retrieval iteration.
+    metadata:
+      description: Node that rewrites the question before another retrieval iteration.

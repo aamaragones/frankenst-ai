@@ -28,12 +28,12 @@ class OrderedLayout(GraphLayout):
         self.FIRST_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("first"),
             name="first_node",
-            tags=["first"],
+            metadata={"tags": ["first"]},
         )
         self.SECOND_NODE = SimpleNode(
             enhancer=StaticMessageEnhancer("second"),
             name="second_node",
-            tags=["second"],
+            metadata={"tags": ["second"]},
         )
         self.FIRST_EDGE = SimpleEdge(node_source="first_node", node_path="second_node")
         self.SECOND_EDGE = SimpleEdge(node_source="second_node", node_path="END")

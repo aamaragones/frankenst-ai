@@ -1,0 +1,76 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: tests
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tests.yml
+
+  full-suite:
+    name: full suite (examples)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Sync project with examples and dev dependencies
+        run: uv sync --frozen --extra examples --group dev
+
+      - name: Run the full repository test suite
+        run: uv run pytest -q
+
+  security:
+    name: security scan
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Export locked runtime dependencies
+        run: uv export --frozen --no-dev --no-emit-project --output-file requirements.txt
+
+      - name: Audit dependencies (pip-audit)
+        run: uvx pip-audit --requirement requirements.txt
+
+      - name: Scan for leaked secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+

@@ -1,11 +1,9 @@
 import asyncio
-import sys
-import types
-from pathlib import Path
 
 import pytest
 from langchain_core.messages import HumanMessage
 from langgraph.graph import END, START
+from langgraph.types import CachePolicy, RetryPolicy, TimeoutPolicy
 
 import frankstate
 from frankstate import WorkflowBuilder
@@ -60,33 +58,26 @@ def test_frankstate_reusable_contracts_are_imported_from_submodules() -> None:
 
 
 @pytest.mark.unit
-def test_display_graph_saves_png_with_optional_notebook_dependencies(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_to_mermaid_returns_clean_offline_text_with_graph_nodes() -> None:
     builder = WorkflowBuilder(config=LinearSyncLayout, state_schema=FrankTestState)
-    output_path = tmp_path / "graph.png"
 
-    fake_ipython = types.ModuleType("IPython")
-    fake_display_module = types.ModuleType("IPython.display")
-    fake_display_module.Image = lambda data: data
-    fake_display_module.display = lambda image: None
-    fake_ipython.display = fake_display_module
+    mermaid = builder.to_mermaid()
 
-    monkeypatch.setitem(sys.modules, "IPython", fake_ipython)
-    monkeypatch.setitem(sys.modules, "IPython.display", fake_display_module)
+    assert isinstance(mermaid, str)
+    assert mermaid.strip() != ""
+    assert "linear_sync_node" in mermaid
+    # tags are layout metadata and must not clutter the default diagram labels
+    assert "linear-sync" not in mermaid
 
-    class FakeDrawableGraph:
-        def draw_mermaid_png(self, draw_method: object) -> bytes:
-            assert draw_method is not None
-            return b"png-bytes"
 
-    class FakeCompiledGraph:
-        def get_graph(self) -> FakeDrawableGraph:
-            return FakeDrawableGraph()
+@pytest.mark.unit
+def test_to_mermaid_with_metadata_keeps_node_tags() -> None:
+    builder = WorkflowBuilder(config=LinearSyncLayout, state_schema=FrankTestState)
 
-    monkeypatch.setattr(builder, "compile", lambda: FakeCompiledGraph())
+    mermaid = builder.to_mermaid(with_metadata=True)
 
-    builder.display_graph(save=True, filepath=str(output_path))
-
-    assert output_path.read_bytes() == b"png-bytes"
+    assert "linear_sync_node" in mermaid
+    assert "linear-sync" in mermaid
 
 
 @pytest.mark.unit
@@ -122,8 +113,8 @@ def test_workflow_builder_passes_node_kwargs_through_add_node() -> None:
             self.KWARGS_NODE = SimpleNode(
                 enhancer=StaticMessageEnhancer("kwargs-response"),
                 name="kwargs_node",
-                tags=["kwargs"],
-                kwargs={"defer": True, "metadata": {"owner": "core"}},
+                defer=True,
+                metadata={"owner": "core", "tags": ["kwargs"]},
             )
             self.START_EDGE = SimpleEdge(node_source=START, node_path=self.KWARGS_NODE.name)
             self.END_EDGE = SimpleEdge(node_source=self.KWARGS_NODE.name, node_path=END)
@@ -136,6 +127,54 @@ def test_workflow_builder_passes_node_kwargs_through_add_node() -> None:
         "tags": ["kwargs"],
         "defer": True,
     }
+
+
+@pytest.mark.unit
+def test_workflow_builder_forwards_langgraph_v1_2_node_fault_tolerance_kwargs() -> None:
+    """BaseNode.kwargs forwards every LangGraph v1.2.0 add_node fault-tolerance arg.
+
+    Covers `retry_policy`, `cache_policy`, `timeout`, `error_handler` and `defer`
+    so that the generic passthrough seam stays compatible with LangGraph's
+    per-node fault-tolerance controls without any frankstate code change.
+    """
+    retry_policy = RetryPolicy(max_attempts=2)
+    cache_policy = CachePolicy(ttl=30)
+    timeout = TimeoutPolicy(run_timeout=5)
+
+    def error_handler(state: dict[str, object]) -> dict[str, object]:
+        return state
+
+    class FaultTolerantLayout(GraphLayout):
+        def build_runtime(self) -> dict[str, object]:
+            return {}
+
+        def layout(self) -> None:
+            self.FT_NODE = SimpleNode(
+                enhancer=StaticMessageEnhancer("ft-response"),
+                name="ft_node",
+                retry_policy=retry_policy,
+                cache_policy=cache_policy,
+                timeout=timeout,
+                error_handler=error_handler,
+                defer=True,
+                metadata={"tags": ["ft"]},
+            )
+            self.START_EDGE = SimpleEdge(node_source=START, node_path=self.FT_NODE.name)
+            self.END_EDGE = SimpleEdge(node_source=self.FT_NODE.name, node_path=END)
+
+    builder = WorkflowBuilder(config=FaultTolerantLayout, state_schema=FrankTestState)
+    builder.compile()
+
+    spec = builder.workflow.nodes["ft_node"]
+    assert spec.retry_policy is retry_policy
+    assert spec.cache_policy is cache_policy
+    assert spec.timeout.run_timeout == 5
+    assert spec.defer is True
+    assert spec.metadata == {"tags": ["ft"]}
+
+    assert spec.error_handler_node == "__error_handler__ft_node"
+    handler_spec = builder.workflow.nodes["__error_handler__ft_node"]
+    assert handler_spec.is_error_handler is True
 
 
 @pytest.mark.unit

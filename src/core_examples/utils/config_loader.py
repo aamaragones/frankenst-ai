@@ -83,7 +83,7 @@ def load_node_registry(path_to_yaml: str | Path | Traversable) -> dict[str, dict
 			raise ValueError(f"The node registry '{path_to_yaml}' must define a non-empty top-level 'nodes' list.")
 
 		validated_nodes: list[dict[str, Any]] = []
-		required_fields = {"id", "name", "type", "description"}
+		required_fields = {"id", "name", "type"}
 		for entry in nodes:
 			if not isinstance(entry, dict):
 				raise ValueError(f"The node registry '{path_to_yaml}' must contain only mapping entries inside 'nodes'.")
@@ -92,6 +92,12 @@ def load_node_registry(path_to_yaml: str | Path | Traversable) -> dict[str, dict
 			if missing_fields:
 				raise ValueError(
 					f"The node registry '{path_to_yaml}' is missing required node fields: {missing_fields}"
+				)
+
+			metadata = entry.get("metadata")
+			if metadata is not None and not isinstance(metadata, dict):
+				raise ValueError(
+					f"The node registry '{path_to_yaml}' must define 'metadata' as a mapping."
 				)
 
 			destinations = entry.get("destinations")

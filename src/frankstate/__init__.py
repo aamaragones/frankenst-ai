@@ -7,7 +7,7 @@ All other reusable building blocks must be imported from subpackages so that
 from their concrete modules. Examples:
 
 - `from frankstate.entity.graph_layout import GraphLayout`
-- `from frankstate.entity.node import SimpleNode, CommandNode`
+- `from frankstate.entity.node import SimpleNode, CommandNode, ToolGraphNode`
 - `from frankstate.entity.edge import SimpleEdge, ConditionalEdge`
 - `from frankstate.entity.statehandler import StateEnhancer, StateEvaluator, StateCommander`
 - `from frankstate.entity.runnable_builder import PromptMixin, RetrieverMixin, RunnableBuilder`

@@ -1,3 +1,5 @@
+"""Edge wrapper definitions consumed by GraphLayout and EdgeManager."""
+
 from collections.abc import Hashable
 from typing import Literal
 

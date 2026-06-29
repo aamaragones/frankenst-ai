@@ -18,6 +18,7 @@ class StaticMessageEnhancer(StateEnhancer):
 
 class RunnableMessageEnhancer(StateEnhancer):
     async def enhance(self, state: Any) -> dict[str, list[AIMessage]]:
+        assert self.runnable is not None
         result = await self.runnable.ainvoke(state)
         if isinstance(result, dict) and "content" in result:
             content = result["content"]
@@ -28,6 +29,7 @@ class RunnableMessageEnhancer(StateEnhancer):
 
 class SyncRunnableMessageEnhancer(StateEnhancer):
     def enhance(self, state: Any) -> dict[str, list[AIMessage]]:
+        assert self.runnable is not None
         result = self.runnable.invoke(state)
         if isinstance(result, dict) and "content" in result:
             content = result["content"]
@@ -43,8 +45,8 @@ class FieldRouteEvaluator(StateEvaluator):
 
     def evaluate(self, state: Any) -> str:
         if isinstance(state, dict):
-            return state[self.field]
-        return getattr(state, self.field)
+            return str(state[self.field])
+        return str(getattr(state, self.field))
 
 
 class AsyncFieldRouteEvaluator(StateEvaluator):
@@ -54,8 +56,8 @@ class AsyncFieldRouteEvaluator(StateEvaluator):
 
     async def evaluate(self, state: Any) -> str:
         if isinstance(state, dict):
-            return state[self.field]
-        return getattr(state, self.field)
+            return str(state[self.field])
+        return str(getattr(state, self.field))
 
 
 class ToolCallEvaluator(StateEvaluator):

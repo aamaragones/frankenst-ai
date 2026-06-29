@@ -1,3 +1,5 @@
+"""RunnableBuilder lifecycle contract with prompt and retriever mixins."""
+
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable
 from typing import Any
@@ -11,6 +13,7 @@ from langchain_core.vectorstores import VectorStore
 
 class RunnableBuilder(ABC):
     """Base lifecycle contract for assembling LangChain LCEL runnable.
+
     Combine with `PromptMixin` and/or `RetrieverMixin` to add capabilities:
 
         class ChatBuilder(PromptMixin, RunnableBuilder):
@@ -32,10 +35,10 @@ class RunnableBuilder(ABC):
 
     def __init__(self, *, model: BaseChatModel) -> None:
         self.model = model
-        self._runnable: Runnable | None = None
+        self._runnable: Runnable[Any, Any] | None = None
 
     @abstractmethod
-    def _configure_runnable(self) -> Runnable:
+    def _configure_runnable(self) -> Runnable[Any, Any]:
         """Build and return the runnable chain.
         
         Returns:
@@ -44,13 +47,13 @@ class RunnableBuilder(ABC):
         """
         raise NotImplementedError
 
-    def _require_runnable(self) -> Runnable:
+    def _require_runnable(self) -> Runnable[Any, Any]:
         if self._runnable is None:
             self._runnable = self._configure_runnable()
         return self._runnable
 
     @property
-    def runnable(self) -> Runnable:
+    def runnable(self) -> Runnable[Any, Any]:
         """The lazily initialized, cached runnable instance."""
         return self._require_runnable()
 
@@ -62,7 +65,7 @@ class RunnableBuilder(ABC):
         """Invoke the runnable asynchronously."""
         return self.runnable.ainvoke(input)
 
-    def get(self) -> Runnable:
+    def get(self) -> Runnable[Any, Any]:
         """Return the runnable, building it on first call."""
         return self.runnable
 
@@ -80,6 +83,7 @@ class RetrieverMixin:
                     | RunnableLambda(lambda x: self._build_prompt())
                     | self.model
                 )
+
     Args:
         retriever: Pre-built retriever. Takes priority over `vectordb` when
             both are provided.
@@ -127,9 +131,7 @@ class RetrieverMixin:
 
     @property
     def retriever(self) -> BaseRetriever:
-        """
-        Lazily initialized retriever instance.
-        """
+        """Lazily initialized retriever instance."""
         if self._retriever is None:
             self._retriever = self._build_retriever()
         return self._retriever
@@ -138,18 +140,18 @@ class RetrieverMixin:
 class PromptMixin(ABC):
     """Abstract mixin that enforces a `_build_prompt` hook on a builder.
 
-        class ChatBuilder(PromptMixin, RunnableBuilder):
-            def __init__(self, model: BaseChatModel) -> None:
-                super().__init__(model=model)
+    class ChatBuilder(PromptMixin, RunnableBuilder):
+        def __init__(self, model: BaseChatModel) -> None:
+            super().__init__(model=model)
 
-            def _build_prompt(self, **kwargs: Any) -> ChatPromptTemplate:
-                return ChatPromptTemplate.from_messages([
-                    ("system", "You are a helpful assistant."),
-                    ("human", "{input}"),
-                ])
+        def _build_prompt(self, **kwargs: Any) -> ChatPromptTemplate:
+            return ChatPromptTemplate.from_messages([
+                ("system", "You are a helpful assistant."),
+                ("human", "{input}"),
+            ])
 
-            def _configure_runnable(self) -> Runnable:
-                return self._build_prompt() | self.model
+        def _configure_runnable(self) -> Runnable:
+            return self._build_prompt() | self.model
     """
 
     @abstractmethod

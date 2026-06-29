@@ -18,7 +18,7 @@ def test_core_settings_resolve_default_repository_paths() -> None:
     assert settings.core_package_path == Path(__file__).resolve().parents[2] / "src" / "core_examples"
     assert settings.src_directory_path == Path(__file__).resolve().parents[2] / "src"
     assert settings.project_root_path == Path(__file__).resolve().parents[2]
-    assert settings.config_file_path == settings.config_directory_path / "config.yml"
+    assert settings.config_llms_file_path == settings.config_directory_path / "config_llms.yml"
     assert settings.config_logging_file_path == settings.config_directory_path / "config_logging.yml"
     assert settings.config_nodes_file_path == settings.config_directory_path / "config_nodes.yml"
 
@@ -31,7 +31,7 @@ def test_core_settings_allow_environment_override(monkeypatch) -> None:
     settings = get_settings()
 
     assert settings.core_package_path == override_package_path
-    assert settings.config_file_path == override_package_path / "config" / "config.yml"
+    assert settings.config_llms_file_path == override_package_path / "config" / "config_llms.yml"
 
     get_settings.cache_clear()
 
@@ -42,7 +42,7 @@ def test_core_settings_allow_init_override_for_core_package_path() -> None:
     settings = CoreSettings(core_package_path=override_package_path)
 
     assert settings.core_package_path == override_package_path
-    assert settings.config_file_path == override_package_path / "config" / "config.yml"
+    assert settings.config_llms_file_path == override_package_path / "config" / "config_llms.yml"
 
     get_settings.cache_clear()
 
@@ -89,7 +89,7 @@ def test_core_settings_expose_nested_domains(monkeypatch) -> None:
 
     assert settings.logging.level == "ERROR"
     assert settings.azure.key_vault_name == "frankenst-kv"
-    assert settings.config_file_path == settings.config_directory_path / "config.yml"
+    assert settings.config_llms_file_path == settings.config_directory_path / "config_llms.yml"
     assert settings.config_nodes_file_path == settings.config_directory_path / "config_nodes.yml"
 
     get_settings.cache_clear()

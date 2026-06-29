@@ -1,3 +1,5 @@
+"""EdgeManager: stores graph edges and exposes them in LangGraph format."""
+
 import logging
 from collections.abc import Hashable, Iterable
 from typing import Any, Literal
@@ -18,7 +20,7 @@ class EdgeManager:
 
     logger: logging.Logger = logging.getLogger(__name__)
     
-    def __init__(self):
+    def __init__(self) -> None:
         self.edges: list[SimpleEdge | ConditionalEdge] = []
         self.logger.info("EdgeManager initialized")
 
@@ -33,9 +35,7 @@ class EdgeManager:
         return list(edges)
 
     def add_edges(self, edges: SimpleEdge | ConditionalEdge | Iterable[SimpleEdge | ConditionalEdge]) -> None:
-        """
-        Add one or more edges to the registry preserving declaration order.
-        """
+        """Add one or more edges to the registry preserving declaration order."""
         for edge in self._normalize_edges(edges):
             if isinstance(edge, SimpleEdge | ConditionalEdge):
                 self.edges.append(edge)
@@ -46,9 +46,7 @@ class EdgeManager:
         self,
         filter_type: type[SimpleEdge] | type[ConditionalEdge] | None = None,
     ) -> tuple[SimpleEdge | ConditionalEdge, ...] | tuple[SimpleEdge, ...] | tuple[ConditionalEdge, ...]:
-        """
-        Retrieve registered edges, optionally filtered by exact edge class.
-        """
+        """Retrieve registered edges, optionally filtered by exact edge class."""
         if filter_type is None:
             return tuple(self.edges)
         elif isinstance(filter_type, type) and issubclass(filter_type, SimpleEdge | ConditionalEdge):
@@ -57,9 +55,7 @@ class EdgeManager:
             raise TypeError(f"Each edge must be a SimpleEdge or ConditionalEdge, expected {type(filter_type)}")
 
     def configs_edges(self) -> tuple[tuple[str, str], ...]:
-        """
-        Return ordered tuples of `(node_source, node_path)` for `StateGraph.add_edge()`.
-        """
+        """Return ordered tuples of `(node_source, node_path)` for `StateGraph.add_edge()`."""
         return tuple(
             (edge.node_source, edge.node_path)
             for edge in self.edges if isinstance(edge, SimpleEdge)
@@ -68,8 +64,7 @@ class EdgeManager:
     def configs_conditional_edges(
         self,
     ) -> tuple[tuple[str, Any, dict[Hashable, str | Literal["START", "END"]]], ...]:
-        """
-        Return ordered tuples for `StateGraph.add_conditional_edges()`.
+        """Return ordered tuples for `StateGraph.add_conditional_edges()`.
 
         The evaluator callable may be synchronous or asynchronous.
         """

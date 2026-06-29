@@ -11,7 +11,7 @@ FUNCTION_APP_PORT ?= 8080
 FRANKSTATE_TESTS := tests/unit_test/frankstate
 PACKAGE_PATHS := src/frankstate tests/unit_test/frankstate
 
-.PHONY: help install install-dev lock format lint type test test-frankstate build clean streamlit mcp-server function-app-build function-app-run function-app-stop function-app-logs docker-build docker-run docker-stop docker-prune docker-rebuild
+.PHONY: help install install-dev lock format lint type test test-frankstate cov build clean streamlit mcp-server function-app-build function-app-run function-app-stop function-app-logs docker-build docker-run docker-stop docker-prune docker-rebuild
 
 help:
 	@echo "Available targets:"
@@ -24,6 +24,7 @@ help:
 	@echo "  type           - Run mypy on the published package slice"
 	@echo "  test           - Run the full repository test suite"
 	@echo "  test-frankstate - Run only the installable frankstate package tests"
+	@echo "  cov            - Run the frankstate package tests with coverage report"
 	@echo "  build          - Build wheel/sdist and validate dist metadata"
 	@echo "  clean          - Remove build, dist, cache and egg-info artifacts"
 	@echo "  streamlit      - Run the local Streamlit app"
@@ -62,6 +63,9 @@ test:
 
 test-frankstate:
 	uv run pytest -q $(FRANKSTATE_TESTS)
+
+cov:
+	uv run pytest -q $(FRANKSTATE_TESTS) --cov=src/frankstate --cov-report=term-missing
 
 build: clean
 	uv build

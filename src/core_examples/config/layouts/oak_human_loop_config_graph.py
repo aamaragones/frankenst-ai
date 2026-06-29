@@ -25,7 +25,7 @@ from core_examples.config.settings import get_settings
 from core_examples.utils.config_loader import load_node_registry
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.graph_layout import GraphLayout
-from frankstate.entity.node import CommandNode, SimpleNode
+from frankstate.entity.node import CommandNode, SimpleNode, ToolGraphNode
 from services.foundry.llms import LLMServices
 
 
@@ -73,12 +73,15 @@ class OakHumanLoopConfigGraph(GraphLayout):
         self.OAKLANG_NODE = SimpleNode(
             enhancer=SimpleMessagesAsyncInvoke(self.OAKLANG_AGENT),
             name=self.CONFIG_NODES["OAKLANG_NODE"]["name"],
-            tags=[self.CONFIG_NODES["OAKLANG_NODE"]["description"]],
+            metadata=self.CONFIG_NODES["OAKLANG_NODE"]["metadata"],
         )
-        self.OAKTOOLS_NODE = ToolNode(
-            tools=self.OAKLANG_AGENT.tools or [],
+        self.OAKTOOLS_NODE = ToolGraphNode(
+            tool_node=ToolNode(
+                tools=self.OAKLANG_AGENT.tools or [],
+                name=self.CONFIG_NODES["OAKTOOLS_NODE"]["name"],
+            ),
             name=self.CONFIG_NODES["OAKTOOLS_NODE"]["name"],
-            tags=[self.CONFIG_NODES["OAKTOOLS_NODE"]["description"]],
+            metadata=self.CONFIG_NODES["OAKTOOLS_NODE"]["metadata"],
         )
         self.HUMAN_REVIEW_NODE = CommandNode(
             commander=HumanReviewSensitiveToolCall(
@@ -86,7 +89,7 @@ class OakHumanLoopConfigGraph(GraphLayout):
                 destinations=self.CONFIG_NODES["HUMAN_REVIEW_NODE"]["destinations"],
             ),
             name=self.CONFIG_NODES["HUMAN_REVIEW_NODE"]["name"],
-            tags=[self.CONFIG_NODES["HUMAN_REVIEW_NODE"]["description"]],
+            metadata=self.CONFIG_NODES["HUMAN_REVIEW_NODE"]["metadata"],
         )
 
         ## EDGES

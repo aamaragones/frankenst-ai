@@ -1,4 +1,6 @@
-from typing import Any
+from typing import Any, cast
+
+from langchain_core.runnables import Runnable
 
 from frankstate.entity.runnable_builder import RetrieverMixin, RunnableBuilder
 
@@ -48,6 +50,9 @@ class FakeRunnableBuilder(RetrieverMixin, RunnableBuilder):
             vectordb=vectordb,
         )
 
-    def _configure_runnable(self) -> SpyRunnable:
+    def _configure_runnable(self) -> Runnable[Any, Any]:
         self.configure_calls += 1
-        return SpyRunnable(sync_result=self.sync_result, async_result=self.async_result)
+        return cast(
+            Runnable[Any, Any],
+            SpyRunnable(sync_result=self.sync_result, async_result=self.async_result),
+        )

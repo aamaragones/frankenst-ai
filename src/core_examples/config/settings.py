@@ -216,8 +216,8 @@ class CoreSettings(BaseSettings):
         return self.core_package_path / "config"
 
     @property
-    def config_file_path(self) -> Path:
-        return self.config_directory_path / "config.yml"
+    def config_llms_file_path(self) -> Path:
+        return self.config_directory_path / "config_llms.yml"
 
     @property
     def config_logging_file_path(self) -> Path:

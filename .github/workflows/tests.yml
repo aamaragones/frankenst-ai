@@ -1,0 +1,43 @@
+name: tests
+
+# Reusable workflow: validates the published `frankstate` slice.
+# Called by both `ci.yml` (PR / push to main) and `release.yml` (tags),
+# so the quality gate is defined in a single place.
+on:
+  workflow_call: {}
+
+jobs:
+  frankstate:
+    name: frankstate slice
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Sync project with development dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Run Ruff for frankstate
+        run: uv run ruff check src/frankstate tests/unit_test/frankstate tests/support/frankstate_doubles
+
+      - name: Run mypy for frankstate
+        run: uv run mypy src/frankstate
+
+      - name: Run frankstate test suite
+        run: uv run pytest -q tests/unit_test/frankstate --cov=src/frankstate --cov-report=term-missing

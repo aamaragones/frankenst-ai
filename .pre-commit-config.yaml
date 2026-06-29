@@ -1,0 +1,36 @@
+# Pre-commit hooks scoped to the published `frankstate` slice.
+# Run `uv run pre-commit install` once, then hooks run on every commit.
+minimum_pre_commit_version: "4.0.0"
+
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.13
+    hooks:
+      - id: ruff
+        name: ruff (frankstate)
+        args: ["--fix"]
+        files: ^(src/frankstate|tests/unit_test/frankstate|tests/support/frankstate_doubles)/
+      - id: ruff-format
+        name: ruff-format (frankstate)
+        files: ^(src/frankstate|tests/unit_test/frankstate|tests/support/frankstate_doubles)/
+
+  - repo: local
+    hooks:
+      - id: mypy-frankstate
+        name: mypy (frankstate)
+        entry: uv run mypy src/frankstate
+        language: system
+        pass_filenames: false
+        files: ^src/frankstate/
