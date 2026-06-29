@@ -23,19 +23,16 @@ LOCAL_MIN_IMAGE_SIZE = (128, 128)
 
 def get_default_local_chroma_directory() -> Path:
     """Return the default persistent Chroma directory for local storage."""
-
     return get_default_artifacts_directory() / ".chromadb"
 
 
 def get_default_local_docstore_directory() -> Path:
     """Return the default companion docstore directory for local storage."""
-
     return get_default_artifacts_directory() / ".docstore"
 
 
 def get_default_local_rag_docs_directory() -> Path:
     """Return the default local PDF corpus directory for RAG bootstrapping."""
-
     return get_default_artifacts_directory() / "rag_docs"
 
 
@@ -49,7 +46,6 @@ def _resolve_local_storage_path(
     default_factory: Callable[[], Path],
 ) -> Path:
     """Resolve local persistence paths against the project root instead of the cwd."""
-
     return resolve_configured_path(
         path_value if path_value is not None else default_factory(),
         get_project_root_path(),
@@ -58,7 +54,6 @@ def _resolve_local_storage_path(
 
 def create_local_docstore(docstore_directory: str | Path | None = None) -> BaseStore:
     """Create or open the persistent local docstore used by the local retriever."""
-
     directory = _resolve_local_storage_path(
         docstore_directory,
         get_default_local_docstore_directory,
@@ -73,7 +68,6 @@ def create_local_vectorstore(
     persist_directory: str | Path | None = None,
 ) -> Chroma:
     """Create or open the persistent local Chroma collection."""
-
     directory = _resolve_local_storage_path(
         persist_directory,
         get_default_local_chroma_directory,
@@ -93,7 +87,6 @@ def get_local_vectorstore(
     persist_directory: str | Path | None = None,
 ) -> Chroma:
     """Open the persistent local Chroma collection without bootstrapping documents."""
-
     return create_local_vectorstore(
         embeddings=embeddings,
         collection_name=collection_name,
@@ -108,7 +101,6 @@ def get_local_retriever_storage(
     docstore_directory: str | Path | None = None,
 ) -> tuple[Chroma, BaseStore]:
     """Open the persistent Chroma collection and companion docstore used by the local retriever."""
-
     vectorstore = get_local_vectorstore(
         embeddings=embeddings,
         collection_name=collection_name,
@@ -154,7 +146,6 @@ def bootstrap_local_vectorstore(
     Images smaller than `min_image_size` are ignored during extraction to avoid indexing icons
     and decorative assets that add noise to the retriever.
     """
-
     vectorstore = create_local_vectorstore(
         embeddings=embeddings,
         collection_name=collection_name,
@@ -189,7 +180,6 @@ def get_or_create_local_vectorstore(
     min_image_size: tuple[int, int] = LOCAL_MIN_IMAGE_SIZE,
 ) -> Chroma:
     """Return the local persistent Chroma collection, bootstrapping it when no persistence exists yet."""
-
     vectorstore = create_local_vectorstore(
         embeddings=embeddings,
         collection_name=collection_name,

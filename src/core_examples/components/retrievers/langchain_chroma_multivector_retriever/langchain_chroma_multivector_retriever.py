@@ -29,7 +29,6 @@ class LangchainChromaMultiVectorRetriever:
         docstore_directory: str | Path = LOCAL_DOCSTORE_DIRECTORY,
     ) -> None:
         """Create the local retriever from the persisted Chroma collection and docstore."""
-
         if vectordb is None or docstore is None:
             persistent_vectordb, persistent_docstore = get_local_retriever_storage(
                 embeddings=embeddings,
@@ -52,5 +51,4 @@ class LangchainChromaMultiVectorRetriever:
 
     def get_retriever(self) -> BaseRetriever:
         """Return the configured persistent local retriever."""
-
         return self.retriever

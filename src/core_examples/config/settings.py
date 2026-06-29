@@ -231,5 +231,4 @@ class CoreSettings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> CoreSettings:
     """Return cached repository settings for the reference layer."""
-
     return CoreSettings()

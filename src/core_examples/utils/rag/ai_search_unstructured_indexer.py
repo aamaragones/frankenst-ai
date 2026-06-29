@@ -36,8 +36,7 @@ class AISearchMultiVectorDocumentIndexer:
         llm_multimodal: BaseLanguageModel | None = None,
         embeddings: Embeddings | None = None,
     ):
-        """
-        Processes and manages documents for Azure AI Search with multi-vector indexing.
+        """Processes and manages documents for Azure AI Search with multi-vector indexing.
 
         Supports parsing PDFs (local or cloud), chunking content (text, tables, images), summarizing with a multimodal LLM,
         embedding with vector models, and indexing in Azure Search. Also allows manual upload and deletion of documents.
@@ -61,8 +60,7 @@ class AISearchMultiVectorDocumentIndexer:
 
 
     def load_pdf(self, path: str) -> None:
-        """
-        Loads a PDF file from a local or temp path to split, embed and store.
+        """Loads a PDF file from a local or temp path to split, embed and store.
 
         Args:
             path (str): Local or temp file path.
@@ -76,8 +74,7 @@ class AISearchMultiVectorDocumentIndexer:
             self.file_path = path
 
     def split_pdf(self, min_image_size: tuple[int, int] | None = None):
-        """
-        Splits the loaded PDF into texts, tables, and base64-encoded images.
+        """Splits the loaded PDF into texts, tables, and base64-encoded images.
         Updates internal state.
 
         Args:
@@ -134,7 +131,6 @@ class AISearchMultiVectorDocumentIndexer:
         min_image_size: tuple[int, int] | None,
     ) -> bool:
         """Return whether an extracted image should be kept for downstream indexing."""
-
         if min_image_size is None:
             return True
 
@@ -148,7 +144,6 @@ class AISearchMultiVectorDocumentIndexer:
 
     def _get_image_size(self, image_base64: str) -> tuple[int, int]:
         """Decode a base64 image payload and return its `(width, height)` dimensions."""
-
         image_bytes = base64.b64decode(image_base64)
         with Image.open(io.BytesIO(image_bytes)) as image:
             return image.size
@@ -200,8 +195,7 @@ class AISearchMultiVectorDocumentIndexer:
         inputs: list[Any],
         config: dict[str, Any] | None = None,
     ) -> list[Any]:
-        """
-        Executes a `.batch()` call with retry on HTTP 429 or transient errors.
+        """Executes a `.batch()` call with retry on HTTP 429 or transient errors.
 
         Args:
             chain (RunnableSequence): Runnable chain to execute.
@@ -214,8 +208,7 @@ class AISearchMultiVectorDocumentIndexer:
         return chain.batch(inputs, config or {"max_concurrency": 3})
 
     def summarize_elements(self):
-        """
-        Summarizes the elements (texts, tables, images) extracted from the PDF.
+        """Summarizes the elements (texts, tables, images) extracted from the PDF.
         Updates internal state.
 
         Returns:
@@ -316,8 +309,7 @@ class AISearchMultiVectorDocumentIndexer:
 
 class AISearchIndexManager:
     def __init__(self, index_client: SearchIndexClient, index_name: str):
-        """
-        Manages the lifecycle and configuration of an Azure AI Search index, 
+        """Manages the lifecycle and configuration of an Azure AI Search index,
         including creation, updating, deletion, and retrieval of the index definition.
 
         Args:
@@ -328,8 +320,7 @@ class AISearchIndexManager:
         self.index_name = index_name
     
     def get_index(self):
-        """
-        Retrieves the definition of the current index.
+        """Retrieves the definition of the current index.
 
         Returns:
             SearchIndex: The current index definition.
@@ -337,8 +328,7 @@ class AISearchIndexManager:
         return self.index_client.get_index(name=self.index_name)
     
     def index_exists(self) -> bool:
-        """
-        Checks whether the specified search index exists in the Azure Cognitive Search service.
+        """Checks whether the specified search index exists in the Azure Cognitive Search service.
 
         Returns:
             bool: True if the index exists, False otherwise.
@@ -350,8 +340,7 @@ class AISearchIndexManager:
             return False
     
     def create_index(self, registered_index_name: str | None = None):
-        """
-        Creates a new search index from a registered Azure AI Search name if it does not already exist.
+        """Creates a new search index from a registered Azure AI Search name if it does not already exist.
 
         Args:
             registered_index_name (str | None): Registered Azure AI Search index
@@ -368,8 +357,7 @@ class AISearchIndexManager:
             raise RuntimeError(f"The index '{self.index_name}' already exists. Please update it instead.")
 
     def update_index(self, registered_index_name: str | None = None):
-        """
-        Updates an existing index from a registered Azure AI Search name.
+        """Updates an existing index from a registered Azure AI Search name.
 
         Args:
             registered_index_name (str | None): Registered Azure AI Search index
@@ -380,14 +368,12 @@ class AISearchIndexManager:
         self.index_client.create_or_update_index(index=index)
 
     def delete_index(self):
-        """
-        Deletes the current search index.
+        """Deletes the current search index.
         """
         self.index_client.delete_index(self.index_name)
 
     def _load_index_definition(self, registered_index_name: str | None = None) -> SearchIndex:
         """Load a registered index definition and bind it to `self.index_name`."""
-
         return load_registered_ai_search_index_definition(
             index_name=registered_index_name or self.index_name,
             runtime_index_name=self.index_name,

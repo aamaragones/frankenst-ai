@@ -28,10 +28,10 @@ async def handoff_oaklang_agent(input: str) -> str:
         config=OakHumanLoopConfigGraph, 
         state_schema=SharedState,
     )
-    OAKLANG_AGENT_GRAPH = workflow_builder.compile()
+    oaklang_agent_graph = workflow_builder.compile()
 
     message_input = {"messages": [{"role": "human", "content": input}]}
-    response = await OAKLANG_AGENT_GRAPH.ainvoke(message_input)
+    response = await oaklang_agent_graph.ainvoke(message_input)
     return response['messages'][-1].content
 
 @mcp.tool("adaptive_rag_tool", description="Tool to use RAG about Pokémon series questions. The input is a question.")
@@ -49,10 +49,10 @@ async def adaptive_rag_tool(input: str) -> str:
         config=LocalVectorStoreAdaptiveRAGConfigGraph,
         state_schema=RAGState,
     )
-    ADAPTATIVE_RAG_GRAPH = workflow_builder.compile()
+    adaptive_rag_graph = workflow_builder.compile()
 
     message_input = {"messages": [{"role": "human", "content": input}]}
-    response = await ADAPTATIVE_RAG_GRAPH.ainvoke(message_input)
+    response = await adaptive_rag_graph.ainvoke(message_input)
     return response['messages'][-1].content
 
 if __name__ == "__main__":

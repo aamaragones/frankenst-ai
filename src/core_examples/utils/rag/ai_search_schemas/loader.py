@@ -13,19 +13,16 @@ AI_SEARCH_INDEX_SCHEMA_MAP: dict[str, str] = {
 
 def list_ai_search_schema_names() -> list[str]:
     """Return the available JSON schema names under the shared schema directory."""
-
     return sorted(schema_path.stem for schema_path in SCHEMAS_DIRECTORY.glob("*.json"))
 
 
 def list_ai_search_index_names() -> list[str]:
     """Return the registered Azure AI Search index names."""
-
     return sorted(AI_SEARCH_INDEX_SCHEMA_MAP)
 
 
 def get_ai_search_schema_path(schema_name: str) -> Path:
     """Resolve a named Azure AI Search schema file from the shared schema directory."""
-
     schema_path = SCHEMAS_DIRECTORY / f"{schema_name}.json"
     if schema_path.exists():
         return schema_path
@@ -39,7 +36,6 @@ def get_ai_search_schema_path(schema_name: str) -> Path:
 
 def get_ai_search_schema_name(index_name: str) -> str:
     """Return the schema name associated with a registered Azure AI Search index name."""
-
     if index_name in AI_SEARCH_INDEX_SCHEMA_MAP:
         return AI_SEARCH_INDEX_SCHEMA_MAP[index_name]
 
@@ -52,7 +48,6 @@ def get_ai_search_schema_name(index_name: str) -> str:
 
 def load_ai_search_index_definition(schema_name: str, index_name: str) -> SearchIndex:
     """Load a SearchIndex definition from JSON and override its runtime index name."""
-
     schema_path = get_ai_search_schema_path(schema_name)
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
@@ -76,7 +71,6 @@ def load_registered_ai_search_index_definition(
     `runtime_index_name` allows binding the schema to a different output name
     when needed, while keeping the registry itself keyed only by index name.
     """
-
     schema_name = get_ai_search_schema_name(index_name)
     return load_ai_search_index_definition(
         schema_name=schema_name,

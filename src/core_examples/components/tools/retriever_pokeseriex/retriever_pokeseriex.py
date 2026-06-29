@@ -12,8 +12,7 @@ INDEX_NAME = "pokeseriex-index"
 class RetrieverPokeSeriex:
     @staticmethod
     def run(query: str) -> list:
-        """
-        This tool transforms a natural language query into a vector and retrieves context from the content and schemas of a Teradata database.
+        """This tool transforms a natural language query into a vector and retrieves context from the content and schemas of a Teradata database.
 
         Args:
             query (str): Question or query in natural language about the PokeSeriex database.
@@ -21,7 +20,6 @@ class RetrieverPokeSeriex:
         Returns:
             str: List containing the most relevant documents and schemas within the PokeSeriex database.
         """
-        
         LLMServices.launch()
         if LLMServices.embeddings is None:
             raise RuntimeError("LLMServices.launch() did not initialize embeddings.")

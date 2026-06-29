@@ -7,8 +7,7 @@ from azure.keyvault.secrets import SecretClient
 
 
 def _to_keyvault_name(name: str) -> str:
-    """
-    Convert an environment-style secret name (UPPER_SNAKE_CASE)
+    """Convert an environment-style secret name (UPPER_SNAKE_CASE)
     to Azure Key Vault naming convention (kebab-case).
 
     Example:
@@ -33,8 +32,7 @@ def get_secret(
     required: bool = True,
     key_vault_name: str | None = None,
 ) -> str | None:
-    """
-    Retrieve a secret value using a dual-source strategy:
+    """Retrieve a secret value using a dual-source strategy:
     1. First attempts to read from environment variables.
     2. Falls back to Azure Key Vault if not found locally.
 
@@ -83,7 +81,6 @@ def get_secret(
         same name to kebab-case, for example ``AZURE_CLIENT_SECRET`` becomes
         ``azure-client-secret``.
     """
-
     if secret_value := os.getenv(secret_name):
         return secret_value
 

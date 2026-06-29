@@ -6,8 +6,7 @@ from pydantic import BaseModel, Field
 class DominatePokemonProperty:
     @dataclass
     class Input(BaseModel):
-        """
-        Input for the DominatePokemonTool
+        """Input for the DominatePokemonTool
         """
         place: str = Field(description="Place could be a city, country or continent")
 

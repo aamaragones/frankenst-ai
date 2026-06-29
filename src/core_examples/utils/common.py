@@ -13,7 +13,6 @@ from core_examples.utils.config_loader import _read_text_resource
 
 def resolve_package_resource(package: str, *relative_parts: str) -> Traversable:
     """Resolve a package resource without relying on filesystem-relative module paths."""
-
     resource = resources.files(package)
     for part in relative_parts:
         resource = resource.joinpath(part)
@@ -22,25 +21,21 @@ def resolve_package_resource(package: str, *relative_parts: str) -> Traversable:
 
 def get_project_root_path() -> Path:
     """Return the configured project root from settings."""
-
     return get_settings().project_root_path.expanduser().resolve()
 
 
 def get_default_artifacts_directory() -> Path:
     """Return the default artifacts directory from settings."""
-
     return get_settings().artifacts_directory_path.expanduser().resolve()
 
 
 def get_default_logs_directory() -> Path:
     """Return the default logs directory from settings."""
-
     return get_settings().logs_directory_path.expanduser().resolve()
 
 
 def resolve_configured_path(path_value: str | Path, base_dir: str | Path) -> Path:
     """Resolve an absolute or base-dir-relative path from configuration."""
-
     path = Path(path_value).expanduser()
     if path.is_absolute():
         return path

@@ -10,18 +10,16 @@ class AISearchSimpleSemanticRetriever:
         embeddings: Embeddings,
         k: int = 5,
     ):
-        """
-        Args:
-            search_client: Azure Search client configured with endpoint, index, and credentials.
-            embeddings: Model used to generate query embeddings.
+        """Args:
+        search_client: Azure Search client configured with endpoint, index, and credentials.
+        embeddings: Model used to generate query embeddings.
         """
         self.search_client = search_client
         self.k = k
         self.embeddings = embeddings
 
     def retrieve(self, query: str) -> list[dict]:
-        """
-        Ejecuta una búsqueda semántica usando embeddings y Azure Cognitive Search.
+        """Ejecuta una búsqueda semántica usando embeddings y Azure Cognitive Search.
         """
         vector = self.embeddings.embed_query(query)
 

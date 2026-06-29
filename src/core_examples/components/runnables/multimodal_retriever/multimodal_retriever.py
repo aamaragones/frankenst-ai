@@ -13,14 +13,12 @@ class MultimodalRetriever(RetrieverMixin, RunnableBuilder):
 
     def __init__(self, model: BaseChatModel, retriever: BaseRetriever) -> None:
         """Compose a multimodal retrieval runnable from a pre-built retriever."""
-
         super().__init__(model=model, retriever=retriever)
 
         self.logger.info("MultimodalRetriever initialized")
 
     def _configure_runnable(self) -> Runnable:
         """Compose retriever output parsing into the runnable returned by invoke or ainvoke."""
-
         multimodal_retriever_parse_chain = self.retriever | RunnableLambda(parse_docs) | RunnableLambda(parse_context)
 
         return multimodal_retriever_parse_chain

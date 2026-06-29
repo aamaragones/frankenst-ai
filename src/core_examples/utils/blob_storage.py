@@ -117,7 +117,6 @@ def load_text_from_blob(blob_path: str, container_name: str) -> str:
 
 def load_json_from_blob(blob_path: str, container_name: str) -> dict[str, Any]:
     """Load a JSON blob and return it as a Python mapping."""
-
     try:
         content = load_text_from_blob(blob_path=blob_path, container_name=container_name)
         payload = json.loads(content)
@@ -136,7 +135,6 @@ def load_json_from_blob(blob_path: str, container_name: str) -> dict[str, Any]:
 
 def download_blob_to_temp_file(blob_path: str, container_name: str) -> str:
     """Download any blob from Azure Blob Storage into a local temporary file."""
-
     blob_service_client = get_blob_service_client()
     blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_path)
 
@@ -163,8 +161,7 @@ def download_pdf_from_blob(blob_path: str, container_name: str) -> str:
 
 
 def parse_blob_subject(subject: str):
-    """
-    Parses a blob subject string with the structure:
+    """Parses a blob subject string with the structure:
     /blobServices/default/containers/{container_name}/blobs/{blob_path}
 
     Returns:

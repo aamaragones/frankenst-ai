@@ -45,7 +45,6 @@ class LLMServices:
 	@classmethod
 	def _model_providers(cls) -> dict[str, Callable[[dict[str, Any]], BaseChatModel]]:
 		"""Return the provider registry used by the model dispatcher."""
-
 		return {
 			"ollama": cls._load_ollama_model,
 			"azure_ai": cls._load_azure_ai_model,
@@ -54,7 +53,6 @@ class LLMServices:
 	@classmethod
 	def _embeddings_providers(cls) -> dict[str, Callable[[dict[str, Any]], Embeddings]]:
 		"""Return the provider registry used by the embeddings dispatcher."""
-
 		return {
 			"ollama": cls._load_ollama_embeddings,
 			"azure_ai": cls._load_azure_ai_embeddings,
@@ -63,7 +61,6 @@ class LLMServices:
 	@classmethod
 	def _load_config(cls, config: dict[str, Any] | None = None) -> dict[str, Any]:
 		"""Load the central config and validate the launch selector section."""
-
 		if config is not None:
 			config_source: str | object = "provided config"
 			resolved_config = config
@@ -93,7 +90,6 @@ class LLMServices:
 		When `as_section` is true, missing keys and non-mapping results are both
 		reported as missing config sections for the requested path.
 		"""
-
 		value: Any = config
 		for key in path.split("."):
 			if not isinstance(value, dict) or key not in value:
@@ -109,7 +105,6 @@ class LLMServices:
 	@classmethod
 	def _resolve_config_value(cls, value: Any) -> Any:
 		"""Resolve config literals and `{secret: ...}` references recursively."""
-
 		if isinstance(value, dict):
 			if set(value) == {"secret"}:
 				secret_name = value["secret"]
@@ -127,7 +122,6 @@ class LLMServices:
 	@classmethod
 	def _resolve_runtime_kwargs(cls, runtime_config: dict[str, Any]) -> dict[str, Any]:
 		"""Resolve a runtime subsection into constructor kwargs."""
-
 		resolved = cls._resolve_config_value(runtime_config)
 		if not isinstance(resolved, dict):
 			raise RuntimeError("Runtime configuration must resolve to a mapping.")
@@ -136,7 +130,6 @@ class LLMServices:
 	@classmethod
 	def _prepare_ollama_kwargs(cls, runtime_config: dict[str, Any], config_path: str) -> dict[str, Any]:
 		"""Prepare Ollama kwargs and inject the resolved base URL when missing."""
-
 		kwargs = cls._resolve_runtime_kwargs(runtime_config)
 		host = kwargs.pop("host", None)
 		if "base_url" not in kwargs:
@@ -162,7 +155,6 @@ class LLMServices:
 		default, but not every Azure region supports it yet. Default to classic
 		chat completions unless the repo config explicitly opts back in.
 		"""
-
 		kwargs = cls._resolve_runtime_kwargs(runtime_config)
 		if kwargs.get("endpoint") and kwargs.get("project_endpoint"):
 			raise RuntimeError(f"Config section {config_path} cannot define both endpoint and project_endpoint.")
@@ -278,7 +270,6 @@ class LLMServices:
 	@classmethod
 	def _current_runtime(cls) -> LLMRuntime | None:
 		"""Return the current shared runtime from class-level state if initialized."""
-
 		if cls.model is None or cls.embeddings is None:
 			return None
 
@@ -287,7 +278,6 @@ class LLMServices:
 	@classmethod
 	def build_runtime(cls, config: dict[str, Any] | None = None) -> LLMRuntime:
 		"""Build a fresh runtime from config without mutating class attributes."""
-
 		resolved_config = cls._load_config(config)
 		model_provider = cls._require(resolved_config, "launch.model")
 		embeddings_provider = cls._require(resolved_config, "launch.embeddings")
@@ -313,7 +303,6 @@ class LLMServices:
 		When the shared runtime is already available, repeated calls reuse it.
 		Pass `force_reload=True` to rebuild the published runtime.
 		"""
-
 		logger.info(
 			"LLMServices.launch requested: force_reload=%s has_cached_model=%s has_cached_embeddings=%s.",
 			force_reload,

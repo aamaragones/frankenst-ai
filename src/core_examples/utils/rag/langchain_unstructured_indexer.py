@@ -29,8 +29,7 @@ from unstructured.partition.pdf import partition_pdf
 # TODO: externalizate the context
 # TODO: add the logic in the slip to exclude small images (icons)
 class LangChainMultiVectorDocumentIndexer:
-    """
-    A class to process PDFs (local or cloud), split content into chunks (texts, tables, images),
+    """A class to process PDFs (local or cloud), split content into chunks (texts, tables, images),
     summarize them, embed and store them in a retriever with multi-vector capability.
     Maintains internal state for elements, summaries, and chunks for later retrieval or debugging.
     """
@@ -44,8 +43,7 @@ class LangChainMultiVectorDocumentIndexer:
         id_key: str = "doc_id",
         metadata_retriever: dict[str, Any] | None = None,
     ):
-        """
-        Initializes the MultiVectorDocumentIndexer.
+        """Initializes the MultiVectorDocumentIndexer.
 
         Args:
             llm (BaseLanguageModel): Language model for summarizing text and tables.
@@ -80,8 +78,7 @@ class LangChainMultiVectorDocumentIndexer:
         )
 
     def load_pdf(self, path: str | None = None, azure_blob: dict[str, Any] | None = None) -> None:
-        """
-        Loads a PDF file from a local path or Azure Blob Storage.
+        """Loads a PDF file from a local path or Azure Blob Storage.
 
         Args:
             path (str): Local file path.
@@ -100,8 +97,7 @@ class LangChainMultiVectorDocumentIndexer:
             raise ValueError("Provide a path or azure_blob info.")
 
     def split_pdf(self, min_image_size: tuple[int, int] | None = None):
-        """
-        Splits the loaded PDF into texts, tables, and base64-encoded images.
+        """Splits the loaded PDF into texts, tables, and base64-encoded images.
         Updates internal state.
 
         Args:
@@ -150,7 +146,6 @@ class LangChainMultiVectorDocumentIndexer:
         min_image_size: tuple[int, int] | None,
     ) -> bool:
         """Return whether an extracted image should be kept for downstream indexing."""
-
         if min_image_size is None:
             return True
 
@@ -164,7 +159,6 @@ class LangChainMultiVectorDocumentIndexer:
 
     def _get_image_size(self, image_base64: str) -> tuple[int, int]:
         """Decode a base64 image payload and return its `(width, height)` dimensions."""
-
         image_bytes = base64.b64decode(image_base64)
         with Image.open(io.BytesIO(image_bytes)) as image:
             return image.size
@@ -216,8 +210,7 @@ class LangChainMultiVectorDocumentIndexer:
         inputs: list[Any],
         config: dict[str, Any] | None = None,
     ) -> list[Any]:
-        """
-        Executes a `.batch()` call with retry on HTTP 429 or transient errors.
+        """Executes a `.batch()` call with retry on HTTP 429 or transient errors.
 
         Args:
             chain (RunnableSequence): Runnable chain to execute.
@@ -230,8 +223,7 @@ class LangChainMultiVectorDocumentIndexer:
         return chain.batch(inputs, config or {"max_concurrency": 3})
 
     def summarize_elements(self):
-        """
-        Summarizes the elements (texts, tables, images) extracted from the PDF.
+        """Summarizes the elements (texts, tables, images) extracted from the PDF.
         Updates internal state.
 
         Returns:
@@ -256,8 +248,7 @@ class LangChainMultiVectorDocumentIndexer:
         return text_summaries, table_summaries, image_summaries
 
     def embed_store_documents(self):
-        """
-        Embeds and stores all elements with their summaries into the retriever.
+        """Embeds and stores all elements with their summaries into the retriever.
         Updated the retriever state
         """
         for content_type in ["texts", "tables", "images"]:
@@ -281,7 +272,6 @@ class LangChainMultiVectorDocumentIndexer:
 
     def _serialize_parent_chunk(self, chunk: Any, content_type: str) -> str:
         """Serialize a raw chunk into a persistable Document page_content value."""
-
         if content_type == "images":
             return str(chunk)
         if hasattr(chunk, "text"):
@@ -290,13 +280,11 @@ class LangChainMultiVectorDocumentIndexer:
 
 
     def get_retriever(self) -> MultiVectorRetriever:
-        """
-        Returns the retriever populated during the workflow.
+        """Returns the retriever populated during the workflow.
 
         Returns:
             MultiVectorRetriever: Ready-to-query retriever.
         """
-
         has_elements = any(self.elements.get(content_type) for content_type in ("texts", "tables", "images"))
         has_summaries = any(self.summaries.get(content_type) for content_type in ("texts", "tables", "images"))
 
@@ -306,11 +294,9 @@ class LangChainMultiVectorDocumentIndexer:
             raise ValueError("Not chunks detected. If already exist in store/vectorstore please use get_prebuild_retriever.")
     
     def get_prebuilt_retriever(self) -> MultiVectorRetriever:
-        """
-        Returns an existing retriever assuming documents already exist in store/vectorstore.
+        """Returns an existing retriever assuming documents already exist in store/vectorstore.
 
         Returns:
             MultiVectorRetriever: The retriever ready for querying.
         """
-
         return self.retriever

@@ -99,7 +99,12 @@ ignore = ["E501", "D107"]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
+# Docstring convention (D) is enforced only on the published `frankstate` slice.
+# The example, service and notebook trees stay fully linted for everything else.
 "tests/**" = ["D"]
+"src/core_examples/**" = ["D"]
+"src/services/**" = ["D"]
+"research/**" = ["D"]
 
 [tool.mypy]
 python_version = "3.12"

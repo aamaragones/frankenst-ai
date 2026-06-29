@@ -9,7 +9,6 @@ from PIL import Image
 
 def _extract_base64_image_payload(doc: Any) -> str | None:
     """Return a normalized base64 payload only when the input is a valid image."""
-
     if isinstance(doc, bytes):
         try:
             candidate = doc.decode("ascii")
@@ -33,7 +32,6 @@ def _extract_base64_image_payload(doc: Any) -> str | None:
 
 def parse_docs(docs: list[Any]) -> dict[str, list[Any]]:
     """Split retrieved multimodal documents into image payloads and text payloads."""
-
     b64 = []
     text = []
     for doc in docs:
@@ -54,7 +52,6 @@ def parse_docs(docs: list[Any]) -> dict[str, list[Any]]:
 
 def parse_context(docs_by_type: dict[str, list[Any]]) -> dict[str, Any]:
     """Build multimodal context from retrieved text and image payloads."""
-
     context_text = ""
     context_images = []
 

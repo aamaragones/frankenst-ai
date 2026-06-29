@@ -28,8 +28,7 @@ class RandomMovementsTool(BaseTool):
         
         
     def _run(self, pokemon_name: str, run_manager: CallbackManagerForToolRun | None = None) -> list[str]:
-        """
-        Run the tool logic
+        """Run the tool logic
         """
         self.logger.info(f"Args: {pokemon_name}")
 

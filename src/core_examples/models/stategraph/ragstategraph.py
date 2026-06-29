@@ -2,8 +2,7 @@ from langgraph.graph import MessagesState
 
 
 class RAGState(MessagesState):
-    """
-    State schema for the adaptive RAG layouts.
+    """State schema for the adaptive RAG layouts.
 
     LangGraph merges the partial updates returned by the project enhancers into
     this schema. The fields below are the keys expected by the retriever,

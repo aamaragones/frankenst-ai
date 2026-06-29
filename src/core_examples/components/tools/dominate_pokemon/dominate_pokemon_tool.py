@@ -28,8 +28,7 @@ class DominatePokemonTool(BaseTool):
         
         
     def _run(self, place: str, run_manager: CallbackManagerForToolRun | None = None) -> list[str]:
-        """
-        Run the tool logic
+        """Run the tool logic
         """
         self.logger.info(f"Args: {place}")
         

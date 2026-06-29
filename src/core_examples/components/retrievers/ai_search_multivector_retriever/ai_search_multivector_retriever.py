@@ -9,10 +9,9 @@ class AISearchMultiVectorRetriever:
         search_client: SearchClient,
         embeddings: Embeddings,
     ):
-        """
-        Args:
-            search_client: Azure Search client configured with endpoint, index, and credentials.
-            embeddings: Model used to generate query embeddings.
+        """Args:
+        search_client: Azure Search client configured with endpoint, index, and credentials.
+        embeddings: Model used to generate query embeddings.
         """
         self.search_client = search_client
         self.embeddings = embeddings
@@ -63,8 +62,7 @@ class AISearchMultiVectorRetriever:
         return grouped
 
     def get_context(self, query: str, k: int = 5, embed: bool = True) -> dict[str, object]:
-        """
-        Performs the search and builds the context.
+        """Performs the search and builds the context.
 
         Returns:
             dict with keys "texts" (concatenated string) and "images" (list of dicts for prompt).

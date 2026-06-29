@@ -6,8 +6,7 @@ from pydantic import BaseModel, Field
 class GetEvolutionProperty:
     @dataclass
     class Input(BaseModel):
-        """
-        Input for the GetEvolutionTool
+        """Input for the GetEvolutionTool
         """
         pokemon_name: str = Field(description="The name of the pokemon that want to know the evolutions.")
 
