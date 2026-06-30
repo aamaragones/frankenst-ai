@@ -16,6 +16,10 @@ phase while the public packaging and repository boundaries continue to mature.
 
 - Documentation accuracy pass: corrected the `frankstate` module-map path and `mypy` scope in `ARCHITECTURE.md`, synced the dependency-policy ranges in `CONTRIBUTING.md` with `pyproject.toml`, and documented the shipped `ToolGraphNode` contract in `README-pypi.md`.
 
+### Fixed
+
+- `GraphLayout` runtime-key discovery now works on Python `3.14`: annotated attribute names are read via `inspect.get_annotations()` instead of `cls.__dict__["__annotations__"]`, which is no longer populated eagerly under PEP 649/749 deferred annotations.
+
 ## [0.2.0] - 2026-06-29
 
 ### Added

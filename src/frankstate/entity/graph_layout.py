@@ -1,8 +1,9 @@
 """Base GraphLayout contract for declaring nodes, edges and runtime."""
 
+import inspect
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, get_type_hints
+from typing import Any
 
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.node import CommandNode, SimpleNode, ToolGraphNode
@@ -39,9 +40,7 @@ class GraphLayout(ABC):
 
     def _get_declared_runtime_keys(self) -> set[str]:
         """Return annotated attribute names declared by the concrete layout."""
-        hints = get_type_hints(self.__class__)
-        declared_annotations = self.__class__.__dict__.get("__annotations__", {})
-        return {key for key in hints.keys() if key in declared_annotations}
+        return set(inspect.get_annotations(self.__class__))
 
     def _build_runtime(self) -> None:
         """Build and project runtime attributes once per layout instance."""
