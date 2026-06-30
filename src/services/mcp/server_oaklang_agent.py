@@ -32,7 +32,7 @@ async def handoff_oaklang_agent(input: str) -> str:
 
     message_input = {"messages": [{"role": "human", "content": input}]}
     response = await oaklang_agent_graph.ainvoke(message_input)
-    return response['messages'][-1].content
+    return str(response['messages'][-1].content)
 
 @mcp.tool("adaptive_rag_tool", description="Tool to use RAG about Pokémon series questions. The input is a question.")
 async def adaptive_rag_tool(input: str) -> str:
@@ -53,7 +53,7 @@ async def adaptive_rag_tool(input: str) -> str:
 
     message_input = {"messages": [{"role": "human", "content": input}]}
     response = await adaptive_rag_graph.ainvoke(message_input)
-    return response['messages'][-1].content
+    return str(response['messages'][-1].content)
 
 if __name__ == "__main__":
     mcp.run(transport="http")

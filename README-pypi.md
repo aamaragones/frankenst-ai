@@ -1,5 +1,11 @@
 # 🧟 frankstate
 
+[![CI](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yml?query=branch%3Amain)
+[![pypi](https://img.shields.io/pypi/v/frankstate.svg)](https://pypi.python.org/pypi/frankstate)
+[![license](https://img.shields.io/github/license/aamaragones/frankenst-ai.svg)](https://github.com/aamaragones/frankenst-ai/blob/main/LICENSE)
+[![downloads](https://static.pepy.tech/badge/frankstate/month)](https://pepy.tech/project/frankstate)
+[![versions](https://img.shields.io/pypi/pyversions/frankstate.svg)](https://github.com/aamaragones/frankenst-ai)
+
 `frankstate` is a lightweight pattern layer for assembling LangGraph workflows with clearer structure, stronger boundaries, and less duplicated graph wiring.
 
 It does not replace LangGraph and it does not introduce a separate runtime. The compiled result is still a native LangGraph graph built with official LangGraph primitives.
@@ -10,7 +16,7 @@ The published package focuses on reusable workflow assembly contracts:
 
 - `WorkflowBuilder` to compile a graph from a layout class.
 - `GraphLayout` to separate runtime dependency construction from graph declaration.
-- `SimpleNode`, `CommandNode`, `SimpleEdge`, and `ConditionalEdge` to model graph structure.
+- `SimpleNode`, `CommandNode`, `ToolGraphNode`, `SimpleEdge`, and `ConditionalEdge` to model graph structure.
 - `StateEnhancer`, `StateEvaluator`, and `StateCommander` to keep node and routing logic aligned with LangGraph concepts.
 - `NodeManager` and `EdgeManager` to normalize layout declarations into LangGraph registration calls.
 
@@ -27,7 +33,7 @@ their concrete modules:
 
 ```python
 from frankstate.entity.graph_layout import GraphLayout
-from frankstate.entity.node import SimpleNode, CommandNode
+from frankstate.entity.node import SimpleNode, CommandNode, ToolGraphNode
 from frankstate.entity.edge import SimpleEdge, ConditionalEdge
 from frankstate.entity.statehandler import StateEnhancer, StateEvaluator, StateCommander
 from frankstate.entity.runnable_builder import RunnableBuilder

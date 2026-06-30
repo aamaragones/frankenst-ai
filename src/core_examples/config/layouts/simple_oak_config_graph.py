@@ -49,12 +49,15 @@ class SimpleOakConfigGraph(GraphLayout):
         LLMServices.launch()
         if LLMServices.model is None:
             raise RuntimeError("LLMServices.launch() did not initialize model.")
+
+        get_evolution_tool = GetEvolutionTool()
+        random_movements_tool = RandomMovementsTool()
         
         return {
             "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
             "OAKLANG_AGENT": OakLangAgent(
                 model=LLMServices.model,
-                tools=[GetEvolutionTool(), RandomMovementsTool()],
+                tools=[get_evolution_tool, random_movements_tool],
             ),
         }
 

@@ -42,7 +42,7 @@ def test_add_nodes_rejects_invalid_types() -> None:
     manager = NodeManager()
 
     with pytest.raises(TypeError, match="Unexpected node type"):
-        manager.add_nodes("invalid")
+        manager.add_nodes("invalid")  # type: ignore[arg-type]
 
 
 @pytest.mark.unit

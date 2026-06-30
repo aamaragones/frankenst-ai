@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any, cast
 
 import pytest
 from langchain_core.messages import HumanMessage
@@ -83,7 +84,7 @@ def test_to_mermaid_with_metadata_keeps_node_tags() -> None:
 @pytest.mark.unit
 def test_workflow_builder_rejects_non_graphlayout_config() -> None:
     with pytest.raises(TypeError, match="GraphLayout subclass"):
-        WorkflowBuilder(config=object, state_schema=FrankTestState)
+        WorkflowBuilder(config=object, state_schema=FrankTestState)  # type: ignore[arg-type]
 
 
 @pytest.mark.unit
@@ -97,8 +98,8 @@ def test_workflow_builder_compiles_linear_layout_once_and_runs_async_enhancer() 
     assert first_compiled is not None
     assert second_compiled is not None
     assert builder._workflow_configured is True
-    assert builder.config.runtime_calls == 1
-    assert builder.config.layout_calls == 1
+    assert cast(LinearAsyncLayout, builder.config).runtime_calls == 1
+    assert cast(LinearAsyncLayout, builder.config).layout_calls == 1
     assert result["messages"][-1].content == "linear-response"
     assert first_compiled.get_graph().nodes["linear_node"].metadata == {"tags": ["linear"]}
 
@@ -138,7 +139,7 @@ def test_workflow_builder_forwards_langgraph_v1_2_node_fault_tolerance_kwargs() 
     per-node fault-tolerance controls without any frankstate code change.
     """
     retry_policy = RetryPolicy(max_attempts=2)
-    cache_policy = CachePolicy(ttl=30)
+    cache_policy: CachePolicy[Any] = CachePolicy(ttl=30)
     timeout = TimeoutPolicy(run_timeout=5)
 
     def error_handler(state: dict[str, object]) -> dict[str, object]:
@@ -168,6 +169,7 @@ def test_workflow_builder_forwards_langgraph_v1_2_node_fault_tolerance_kwargs() 
     spec = builder.workflow.nodes["ft_node"]
     assert spec.retry_policy is retry_policy
     assert spec.cache_policy is cache_policy
+    assert spec.timeout is not None
     assert spec.timeout.run_timeout == 5
     assert spec.defer is True
     assert spec.metadata == {"tags": ["ft"]}
@@ -258,7 +260,10 @@ def test_workflow_builder_routes_command_nodes_and_applies_updates(decision: str
     assert result["decision"] == decision
     assert result["messages"][-2].content == f"command:{decision}"
     assert result["messages"][-1].content == expected_message
-    assert builder.node_manager.nodes["command_node"].destinations == ("accept_node", "reject_node")
+    assert cast(CommandNode, builder.node_manager.nodes["command_node"]).destinations == (
+        "accept_node",
+        "reject_node",
+    )
 
 
 @pytest.mark.unit

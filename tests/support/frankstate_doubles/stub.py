@@ -17,6 +17,8 @@ class StaticMessageEnhancer(StateEnhancer):
 
 
 class RunnableMessageEnhancer(StateEnhancer):
+    marker: str
+
     async def enhance(self, state: Any) -> dict[str, list[AIMessage]]:
         assert self.runnable is not None
         result = await self.runnable.ainvoke(state)
@@ -28,6 +30,8 @@ class RunnableMessageEnhancer(StateEnhancer):
 
 
 class SyncRunnableMessageEnhancer(StateEnhancer):
+    marker: str
+
     def enhance(self, state: Any) -> dict[str, list[AIMessage]]:
         assert self.runnable is not None
         result = self.runnable.invoke(state)
@@ -39,6 +43,8 @@ class SyncRunnableMessageEnhancer(StateEnhancer):
 
 
 class FieldRouteEvaluator(StateEvaluator):
+    marker: str
+
     def __init__(self, field: str = "route", **kwargs: Any):
         super().__init__(**kwargs)
         self.field = field
@@ -50,6 +56,8 @@ class FieldRouteEvaluator(StateEvaluator):
 
 
 class AsyncFieldRouteEvaluator(StateEvaluator):
+    marker: str
+
     def __init__(self, field: str = "route", **kwargs: Any):
         super().__init__(**kwargs)
         self.field = field

@@ -1,3 +1,8 @@
+from typing import Any, cast
+
+import pytest
+from azure.search.documents.indexes import SearchIndexClient
+
 from core_examples.utils.rag.ai_search_schemas import (
     get_ai_search_schema_name,
     list_ai_search_index_names,
@@ -7,15 +12,17 @@ from core_examples.utils.rag.ai_search_schemas import (
 )
 from core_examples.utils.rag.ai_search_unstructured_indexer import AISearchIndexManager
 
+pytestmark = pytest.mark.unit
+
 
 class FakeMissingIndexClient:
     def __init__(self) -> None:
-        self.created_index = None
+        self.created_index: Any = None
 
-    def get_index(self, name: str):
+    def get_index(self, name: str) -> Any:
         raise RuntimeError(f"Index {name} not found")
 
-    def create_index(self, index) -> None:
+    def create_index(self, index: Any) -> None:
         self.created_index = index
 
 
@@ -59,7 +66,9 @@ def test_loader_binds_runtime_index_name_from_registered_index_name() -> None:
 
 def test_create_index_loads_search_schema_from_shared_loader() -> None:
     index_client = FakeMissingIndexClient()
-    manager = AISearchIndexManager(index_client=index_client, index_name="runtime-index")
+    manager = AISearchIndexManager(
+        index_client=cast(SearchIndexClient, index_client), index_name="runtime-index"
+    )
 
     manager.create_index("pokeseriex-index")
 

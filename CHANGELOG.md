@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog and the project currently stays in the `0.x`
 phase while the public packaging and repository boundaries continue to mature.
 
+## [0.2.1] - 2026-06-30
+
+### Added
+
+- Official support for Python `3.14`: declared via PyPI classifiers and exercised by the `frankstate` slice CI matrix (`3.12`/`3.13`/`3.14`).
+- Status badges (CI, PyPI version, license, monthly downloads, supported Python versions) at the top of `README-pypi.md`.
+
+### Changed
+
+- Documentation accuracy pass: corrected the `frankstate` module-map path and `mypy` scope in `ARCHITECTURE.md`, synced the dependency-policy ranges in `CONTRIBUTING.md` with `pyproject.toml`, and documented the shipped `ToolGraphNode` contract in `README-pypi.md`.
+
 ## [0.2.0] - 2026-06-29
 
 ### Added

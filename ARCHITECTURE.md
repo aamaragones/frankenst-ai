@@ -76,7 +76,7 @@ an absolute-import bucket:
 
 ```python
 from frankstate.entity.graph_layout import GraphLayout
-from frankstate.entity.node import SimpleNode, CommandNode
+from frankstate.entity.node import SimpleNode, CommandNode, ToolGraphNode
 from frankstate.entity.edge import SimpleEdge, ConditionalEdge
 from frankstate.entity.statehandler import StateEnhancer, StateEvaluator, StateCommander
 from frankstate.entity.runnable_builder import RunnableBuilder, PromptMixin, RetrieverMixin
@@ -386,7 +386,8 @@ tests/
   against the compiled `StateGraph` / `CompiledStateGraph` to prove correct serialization.
 - **Markers:** tests are tagged (e.g. `@pytest.mark.unit`) and discovered under
   `tests/unit_test` and `tests/integration_test`.
-- **Static checks:** `ruff` (lint/format) and `mypy` (scoped to `src/frankstate`) gate
+- **Static checks:** `ruff` (lint/format) and `mypy` (strict, over `src/frankstate`
+  and the `frankstate` tests gate
   the core package.
 
 ### Continuous validation & delivery

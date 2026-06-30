@@ -22,7 +22,7 @@ def test_add_edges_rejects_invalid_types() -> None:
     manager = EdgeManager()
 
     with pytest.raises(TypeError, match="SimpleEdge or ConditionalEdge"):
-        manager.add_edges("invalid")
+        manager.add_edges("invalid")  # type: ignore[arg-type]
 
 
 @pytest.mark.unit
@@ -46,7 +46,7 @@ def test_get_edges_rejects_invalid_filter_type() -> None:
     manager = EdgeManager()
 
     with pytest.raises(TypeError, match="expected"):
-        manager.get_edges(str)
+        manager.get_edges(str)  # type: ignore[arg-type]
 
 
 @pytest.mark.unit

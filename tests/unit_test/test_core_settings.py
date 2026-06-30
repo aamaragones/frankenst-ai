@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Any, cast
 
+import pytest
+
 import core_examples.config.settings as settings_module
 from core_examples.config.settings import (
     AzureSettings,
@@ -8,6 +10,8 @@ from core_examples.config.settings import (
     LoggingSettings,
     get_settings,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_core_settings_resolve_default_repository_paths() -> None:
@@ -23,7 +27,7 @@ def test_core_settings_resolve_default_repository_paths() -> None:
     assert settings.config_nodes_file_path == settings.config_directory_path / "config_nodes.yml"
 
 
-def test_core_settings_allow_environment_override(monkeypatch) -> None:
+def test_core_settings_allow_environment_override(monkeypatch: pytest.MonkeyPatch) -> None:
     override_package_path = Path("/tmp/frankenst-core/src/core_examples")
     get_settings.cache_clear()
     monkeypatch.setenv("FRANK_CORE_PACKAGE_PATH", str(override_package_path))
@@ -47,7 +51,9 @@ def test_core_settings_allow_init_override_for_core_package_path() -> None:
     get_settings.cache_clear()
 
 
-def test_core_settings_read_logging_and_key_vault_from_standard_env_names(monkeypatch) -> None:
+def test_core_settings_read_logging_and_key_vault_from_standard_env_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("LOG_TO_FILE", "true")
@@ -73,12 +79,14 @@ def test_core_settings_can_load_standard_env_names_from_env_file(tmp_path: Path)
     assert settings.logging.to_file is True
 
 
-def test_core_settings_expose_nested_domains(monkeypatch) -> None:
+def test_core_settings_expose_nested_domains(monkeypatch: pytest.MonkeyPatch) -> None:
     get_settings.cache_clear()
     monkeypatch.setenv("LOG_LEVEL", "ERROR")
     monkeypatch.setenv("AZURE_KEY_VAULT_NAME", "frankenst-kv")
     monkeypatch.setenv("AZURE_BLOB_STORAGE_NAME", "blob-from-env")
     monkeypatch.setenv("APPLICATION_INSIGHTS_CONNECTION_STRING", "telemetry-from-env")
+    monkeypatch.setenv("AZURE_SEARCH_SERVICE_ENDPOINT", "https://search.example")
+    monkeypatch.setenv("AZURE_SEARCH_API_KEY", "search-from-env")
     monkeypatch.setattr(
         settings_module,
         "get_secret",
@@ -95,7 +103,9 @@ def test_core_settings_expose_nested_domains(monkeypatch) -> None:
     get_settings.cache_clear()
 
 
-def test_azure_settings_can_fall_back_to_key_vault_for_blob_storage_name(monkeypatch) -> None:
+def test_azure_settings_can_fall_back_to_key_vault_for_blob_storage_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("AZURE_BLOB_STORAGE_NAME", raising=False)
     monkeypatch.setattr(
         settings_module,
@@ -110,9 +120,11 @@ def test_azure_settings_can_fall_back_to_key_vault_for_blob_storage_name(monkeyp
     assert settings.blob_storage_name == "blob-from-kv"
 
 
-def test_azure_settings_prefer_env_before_key_vault_fallback(monkeypatch) -> None:
+def test_azure_settings_prefer_env_before_key_vault_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AZURE_BLOB_STORAGE_NAME", "blob-from-env")
     monkeypatch.setenv("APPLICATION_INSIGHTS_CONNECTION_STRING", "telemetry-from-env")
+    monkeypatch.setenv("AZURE_SEARCH_SERVICE_ENDPOINT", "https://search.example")
+    monkeypatch.setenv("AZURE_SEARCH_API_KEY", "search-from-env")
     monkeypatch.setattr(
         settings_module,
         "get_secret",
@@ -124,7 +136,9 @@ def test_azure_settings_prefer_env_before_key_vault_fallback(monkeypatch) -> Non
     assert settings.blob_storage_name == "blob-from-env"
 
 
-def test_azure_settings_can_fall_back_to_key_vault_for_telemetry_connection_string(monkeypatch) -> None:
+def test_azure_settings_can_fall_back_to_key_vault_for_telemetry_connection_string(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("APPLICATION_INSIGHTS_CONNECTION_STRING", raising=False)
     monkeypatch.setattr(
         settings_module,
@@ -142,9 +156,13 @@ def test_azure_settings_can_fall_back_to_key_vault_for_telemetry_connection_stri
     assert settings.telemetry_connection_string_value == "telemetry-from-kv"
 
 
-def test_azure_settings_prefer_env_for_telemetry_before_key_vault_fallback(monkeypatch) -> None:
+def test_azure_settings_prefer_env_for_telemetry_before_key_vault_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("AZURE_BLOB_STORAGE_NAME", "blob-from-env")
     monkeypatch.setenv("APPLICATION_INSIGHTS_CONNECTION_STRING", "telemetry-from-env")
+    monkeypatch.setenv("AZURE_SEARCH_SERVICE_ENDPOINT", "https://search.example")
+    monkeypatch.setenv("AZURE_SEARCH_API_KEY", "search-from-env")
     monkeypatch.setattr(
         settings_module,
         "get_secret",

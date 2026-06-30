@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
@@ -10,16 +11,16 @@ from .get_evolution_property import GetEvolutionProperty
 
 class GetEvolutionTool(BaseTool):
     # BaseTool atributes
-    name: str | None = None
-    description: str | None = None
+    name: str = ""
+    description: str = ""
     args_schema: type[BaseModel] | None = None
-    return_direct: bool | None = None
+    return_direct: bool = False
 
     # New BaseTool attributes
-    config: SkipValidation[GetEvolutionProperty] = GetEvolutionProperty
+    config: SkipValidation[GetEvolutionProperty] = GetEvolutionProperty()
     logger: SkipValidation[logging.Logger] = logging.getLogger(__name__)
      
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
         self.name = self.__class__.__name__
         self.description = self.config.description

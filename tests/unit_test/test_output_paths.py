@@ -2,6 +2,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from langgraph.types import Command
@@ -10,6 +11,8 @@ import core_examples.utils.common as common_module
 import core_examples.utils.config_loader as config_loader_module
 import core_examples.utils.logger as logger_module
 import core_examples.utils.rag.local_chroma as local_chroma_module
+
+pytestmark = pytest.mark.unit
 
 
 @dataclass
@@ -45,7 +48,9 @@ def test_resolve_configured_path_preserves_absolute_paths(tmp_path: Path) -> Non
     assert common_module.resolve_configured_path(absolute_path, base_dir) == absolute_path
 
 
-def test_save_text_to_artifact_uses_default_directory_without_constants_or_cwd(tmp_path: Path, monkeypatch) -> None:
+def test_save_text_to_artifact_uses_default_directory_without_constants_or_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     project_root = tmp_path / "template-root"
     other_dir = tmp_path / "elsewhere"
     project_root.mkdir()
@@ -60,7 +65,9 @@ def test_save_text_to_artifact_uses_default_directory_without_constants_or_cwd(t
     assert artifact_path.read_text(encoding="utf-8") == "hello"
 
 
-def test_configure_logging_does_not_create_a_log_file_by_default(tmp_path: Path, monkeypatch) -> None:
+def test_configure_logging_does_not_create_a_log_file_by_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     log_path = tmp_path / "logs" / "application.log"
     fake_settings = _FakeSettings(
         logging=_FakeLoggingSettings(level="INFO", to_file=False),
@@ -80,7 +87,9 @@ def test_configure_logging_does_not_create_a_log_file_by_default(tmp_path: Path,
     assert not log_path.exists()
 
 
-def test_configure_logging_creates_a_log_file_when_enabled(tmp_path: Path, monkeypatch) -> None:
+def test_configure_logging_creates_a_log_file_when_enabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     log_path = tmp_path / "logs" / "application.log"
     fake_settings = _FakeSettings(
         logging=_FakeLoggingSettings(level="INFO", to_file=True),
@@ -108,7 +117,9 @@ def test_default_output_directories_resolve_from_settings() -> None:
     assert common_module.get_default_artifacts_directory() == project_root / "artifacts"
 
 
-def test_local_chroma_uses_default_directories_without_constants_or_cwd(tmp_path: Path, monkeypatch) -> None:
+def test_local_chroma_uses_default_directories_without_constants_or_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     project_root = tmp_path / "template-root"
     other_dir = tmp_path / "elsewhere"
     project_root.mkdir()
@@ -129,7 +140,9 @@ def test_local_chroma_uses_default_directories_without_constants_or_cwd(tmp_path
     )
 
 
-def test_local_chroma_resolves_relative_paths_against_project_root(tmp_path: Path, monkeypatch) -> None:
+def test_local_chroma_resolves_relative_paths_against_project_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     project_root = tmp_path / "template-root"
     project_root.mkdir()
     monkeypatch.setattr(local_chroma_module, "get_project_root_path", lambda: project_root)
@@ -145,20 +158,22 @@ def test_local_chroma_resolves_relative_paths_against_project_root(tmp_path: Pat
 def test_print_process_astream_accepts_command_input() -> None:
     class FakeCompiledGraph:
         def __init__(self) -> None:
-            self.seen_input = None
-            self.seen_config = None
-            self.seen_stream_mode = None
+            self.seen_input: Any = None
+            self.seen_config: Any = None
+            self.seen_stream_mode: Any = None
 
-        async def astream(self, message_input, runnable_config, stream_mode="updates"):
+        async def astream(
+            self, message_input: Any, runnable_config: Any, stream_mode: str = "updates"
+        ) -> Any:
             self.seen_input = message_input
             self.seen_config = runnable_config
             self.seen_stream_mode = stream_mode
             yield {"messages": ["ok"]}
 
     graph = FakeCompiledGraph()
-    command_input = Command(goto=())
+    command_input: Command[Any] = Command(goto=())
 
-    result = asyncio.run(common_module.print_process_astream(graph, command_input))
+    result = asyncio.run(common_module.print_process_astream(cast(Any, graph), command_input))
 
     assert graph.seen_input is command_input
     assert graph.seen_stream_mode == "updates"

@@ -73,6 +73,16 @@ class AzureSettings(SecretBackedSettings):
         validation_alias="AZURE_BLOB_STORAGE_NAME",
         json_schema_extra={"key_vault_fallback": True},
     )
+    search_service_endpoint: str | None = Field(
+        default=None,
+        validation_alias="AZURE_SEARCH_SERVICE_ENDPOINT",
+        json_schema_extra={"key_vault_fallback": True},
+    )
+    search_api_key: SecretStr | None = Field(
+        default=None,
+        validation_alias="AZURE_SEARCH_API_KEY",
+        json_schema_extra={"key_vault_fallback": True},
+    )
     # NOTE: The following settings are examples of how additional
     # Azure-related secrets could be configured with Key Vault fallback.
     # agents_function_app_api_key: SecretStr | None = Field(
@@ -96,6 +106,14 @@ class AzureSettings(SecretBackedSettings):
         return (
             value.get_secret_value()
             if (value := self.telemetry_connection_string) is not None
+            else None
+        )
+
+    @property
+    def search_api_key_value(self) -> str | None:
+        return (
+            value.get_secret_value()
+            if (value := self.search_api_key) is not None
             else None
         )
 

@@ -36,6 +36,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
+          cache-suffix: release
 
       - name: Extract release version from tag
         id: meta

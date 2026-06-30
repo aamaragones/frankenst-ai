@@ -1,19 +1,23 @@
+from typing import Any, cast
+
 import pytest
 from azure.identity import DefaultAzureCredential
 
 from services.foundry import llms as llms_module
 
+pytestmark = pytest.mark.unit
+
 
 class CaptureFactory:
 	def __init__(self) -> None:
-		self.calls: list[dict] = []
+		self.calls: list[dict[str, Any]] = []
 
-	def __call__(self, **kwargs):
+	def __call__(self, **kwargs: Any) -> dict[str, Any]:
 		self.calls.append(kwargs)
 		return {"kwargs": kwargs}
 
 
-def test_llmservices_build_runtime_uses_nested_ollama_sections(monkeypatch) -> None:
+def test_llmservices_build_runtime_uses_nested_ollama_sections(monkeypatch: pytest.MonkeyPatch) -> None:
 	chat_factory = CaptureFactory()
 	embeddings_factory = CaptureFactory()
 
@@ -32,14 +36,16 @@ def test_llmservices_build_runtime_uses_nested_ollama_sections(monkeypatch) -> N
 
 	runtime = llms_module.LLMServices.build_runtime(config)
 
-	assert runtime.model["kwargs"]["model"] == "gemma4:e4b"
-	assert runtime.model["kwargs"]["temperature"] == 0
-	assert runtime.model["kwargs"]["base_url"] == "http://ollama.local"
-	assert runtime.embeddings["kwargs"]["model"] == "embeddinggemma"
-	assert runtime.embeddings["kwargs"]["base_url"] == "http://ollama.local"
+	model_kwargs = cast(dict[str, Any], runtime.model)["kwargs"]
+	embeddings_kwargs = cast(dict[str, Any], runtime.embeddings)["kwargs"]
+	assert model_kwargs["model"] == "gemma4:e4b"
+	assert model_kwargs["temperature"] == 0
+	assert model_kwargs["base_url"] == "http://ollama.local"
+	assert embeddings_kwargs["model"] == "embeddinggemma"
+	assert embeddings_kwargs["base_url"] == "http://ollama.local"
 
 
-def test_llmservices_build_runtime_resolves_nested_azure_ai_sections(monkeypatch) -> None:
+def test_llmservices_build_runtime_resolves_nested_azure_ai_sections(monkeypatch: pytest.MonkeyPatch) -> None:
 	chat_factory = CaptureFactory()
 	embeddings_factory = CaptureFactory()
 	secret_values = {
@@ -79,14 +85,16 @@ def test_llmservices_build_runtime_resolves_nested_azure_ai_sections(monkeypatch
 
 	runtime = llms_module.LLMServices.build_runtime(config)
 
-	assert runtime.model["kwargs"]["endpoint"] == "https://chat.example/openai/v1"
-	assert runtime.model["kwargs"]["credential"] == "chat-key"
-	assert runtime.model["kwargs"]["model"] == "gpt-4o-mini"
-	assert runtime.embeddings["kwargs"]["model"] == "text-embedding-3-small"
-	assert runtime.embeddings["kwargs"]["credential"] == "embed-key"
+	model_kwargs = cast(dict[str, Any], runtime.model)["kwargs"]
+	embeddings_kwargs = cast(dict[str, Any], runtime.embeddings)["kwargs"]
+	assert model_kwargs["endpoint"] == "https://chat.example/openai/v1"
+	assert model_kwargs["credential"] == "chat-key"
+	assert model_kwargs["model"] == "gpt-4o-mini"
+	assert embeddings_kwargs["model"] == "text-embedding-3-small"
+	assert embeddings_kwargs["credential"] == "embed-key"
 
 
-def test_llmservices_azure_ai_uses_default_credential_without_api_key(monkeypatch) -> None:
+def test_llmservices_azure_ai_uses_default_credential_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
 	chat_factory = CaptureFactory()
 	embeddings_factory = CaptureFactory()
 
@@ -112,8 +120,10 @@ def test_llmservices_azure_ai_uses_default_credential_without_api_key(monkeypatc
 
 	runtime = llms_module.LLMServices.build_runtime(config)
 
-	assert isinstance(runtime.model["kwargs"]["credential"], DefaultAzureCredential)
-	assert isinstance(runtime.embeddings["kwargs"]["credential"], DefaultAzureCredential)
+	model_kwargs = cast(dict[str, Any], runtime.model)["kwargs"]
+	embeddings_kwargs = cast(dict[str, Any], runtime.embeddings)["kwargs"]
+	assert isinstance(model_kwargs["credential"], DefaultAzureCredential)
+	assert isinstance(embeddings_kwargs["credential"], DefaultAzureCredential)
 
 
 def test_llmservices_azure_ai_requires_explicit_runtime_sections() -> None:
@@ -127,7 +137,7 @@ def test_llmservices_azure_ai_requires_explicit_runtime_sections() -> None:
 		llms_module.LLMServices.build_runtime(config)
 
 
-def test_llmservices_reuses_provider_registry_for_model_and_embeddings(monkeypatch) -> None:
+def test_llmservices_reuses_provider_registry_for_model_and_embeddings(monkeypatch: pytest.MonkeyPatch) -> None:
 	chat_factory = CaptureFactory()
 	embeddings_factory = CaptureFactory()
 
@@ -146,8 +156,10 @@ def test_llmservices_reuses_provider_registry_for_model_and_embeddings(monkeypat
 
 	runtime = llms_module.LLMServices.build_runtime(config)
 
-	assert runtime.model["kwargs"]["base_url"] == "http://ollama.local"
-	assert runtime.embeddings["kwargs"]["base_url"] == "http://ollama.local"
+	model_kwargs = cast(dict[str, Any], runtime.model)["kwargs"]
+	embeddings_kwargs = cast(dict[str, Any], runtime.embeddings)["kwargs"]
+	assert model_kwargs["base_url"] == "http://ollama.local"
+	assert embeddings_kwargs["base_url"] == "http://ollama.local"
 
 
 def test_llmservices_rejects_unsupported_provider_from_central_registry() -> None:

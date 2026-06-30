@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frankstate"
-version = "0.2.0"
+version = "0.2.1"
 description = "Frank brings order and helps you build complex LLM workflows using scalable, testable, and reusable components."
 license = "MIT"
 readme = { file = "README-pypi.md", content-type = "text/markdown" }
@@ -19,6 +19,9 @@ authors = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent"
 ]
 keywords = ["LLM", "azure", "langgraph", "langchain", "azure-foundry", "unstructured", "multimodal"]
@@ -59,6 +62,7 @@ lint = [
     "mypy==2.1.0",
     "ruff==0.15.13",
     "pre-commit==4.4.0",
+    "types-PyYAML==6.0.12.20260518",
 ]
 test = [
     "pytest==9.0.3",

@@ -58,12 +58,14 @@ class OakHumanLoopConfigGraph(GraphLayout):
             raise RuntimeError("LLMServices.launch() did not initialize model.")
 
         dominate_pokemon_tool = DominatePokemonTool()
+        random_movements_tool = RandomMovementsTool()
+        get_evolution_tool = GetEvolutionTool()
 
         return {
             "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
             "OAKLANG_AGENT": OakLangAgent(
                 model=LLMServices.model,
-                tools=[GetEvolutionTool(), RandomMovementsTool(), dominate_pokemon_tool],
+                tools=[get_evolution_tool, random_movements_tool, dominate_pokemon_tool],
             ),
             "SENSITIVE_TOOLS": [dominate_pokemon_tool],
         }

@@ -1,8 +1,7 @@
+# Reusable workflow: validates the published `frankstate` slice.
+# Called by both `ci.yml` (PR / push to main) and `release.yml` (tags)
 name: tests
 
-# Reusable workflow: validates the published `frankstate` slice.
-# Called by both `ci.yml` (PR / push to main) and `release.yml` (tags),
-# so the quality gate is defined in a single place.
 on:
   workflow_call: {}
 
@@ -13,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12", "3.13", "3.14"]
     permissions:
       contents: read
     steps:
@@ -29,6 +28,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
+          cache-suffix: frankstate-${{ matrix.python-version }}
 
       - name: Sync project with development dependencies
         run: uv sync --frozen --group dev

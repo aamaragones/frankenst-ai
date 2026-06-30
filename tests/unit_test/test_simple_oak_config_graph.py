@@ -1,5 +1,8 @@
 import asyncio
+from typing import cast
 
+import pytest
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
 from core_examples.components.edges.evaluators.route_tool_condition import (
@@ -14,20 +17,27 @@ from core_examples.models.stategraph.stategraph import SharedState
 from frankstate import WorkflowBuilder
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.node import SimpleNode, ToolGraphNode
+from services.foundry.llms import LLMServices
 from tests.support.core_doubles import ToolBindingFakeModel
 
+pytestmark = pytest.mark.unit
 
-def _patch_simple_oak_runtime(monkeypatch, response_content: str = "oak-response") -> ToolBindingFakeModel:
-    fake_model = ToolBindingFakeModel(response_content=response_content)
+
+def _patch_simple_oak_runtime(
+    monkeypatch: pytest.MonkeyPatch, response_content: str = "oak-response"
+) -> BaseChatModel:
+    fake_model = cast(BaseChatModel, ToolBindingFakeModel(response_content=response_content))
 
     def fake_launch() -> None:
-        simple_oak_module.LLMServices.model = fake_model
+        LLMServices.model = fake_model
 
-    monkeypatch.setattr(simple_oak_module.LLMServices, "launch", fake_launch)
+    monkeypatch.setattr(LLMServices, "launch", fake_launch)
     return fake_model
 
 
-def test_simple_oak_config_graph_build_runtime_resolves_all_runtime_dependencies(monkeypatch) -> None:
+def test_simple_oak_config_graph_build_runtime_resolves_all_runtime_dependencies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     fake_model = _patch_simple_oak_runtime(monkeypatch)
     layout = simple_oak_module.SimpleOakConfigGraph()
 
@@ -44,7 +54,9 @@ def test_simple_oak_config_graph_build_runtime_resolves_all_runtime_dependencies
     ]
 
 
-def test_simple_oak_config_graph_declares_nodes_edges_and_runnable_builders(monkeypatch) -> None:
+def test_simple_oak_config_graph_declares_nodes_edges_and_runnable_builders(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _patch_simple_oak_runtime(monkeypatch)
     layout = simple_oak_module.SimpleOakConfigGraph()
 
@@ -75,7 +87,9 @@ def test_simple_oak_config_graph_declares_nodes_edges_and_runnable_builders(monk
     assert runnable_builders == [layout.OAKLANG_AGENT]
 
 
-def test_simple_oak_config_graph_compiles_and_runs_with_workflow_builder(monkeypatch) -> None:
+def test_simple_oak_config_graph_compiles_and_runs_with_workflow_builder(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _patch_simple_oak_runtime(monkeypatch, response_content="oak-layout-response")
     builder = WorkflowBuilder(
         config=simple_oak_module.SimpleOakConfigGraph,

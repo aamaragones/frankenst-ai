@@ -38,6 +38,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
+          cache-suffix: full-suite
 
       - name: Sync project with examples and dev dependencies
         run: uv sync --frozen --extra examples --group dev
@@ -64,6 +65,7 @@ jobs:
         uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
+          cache-suffix: security
 
       - name: Export locked runtime dependencies
         run: uv export --frozen --no-dev --no-emit-project --output-file requirements.txt
@@ -72,5 +74,5 @@ jobs:
         run: uvx pip-audit --requirement requirements.txt
 
       - name: Scan for leaked secrets (gitleaks)
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
 

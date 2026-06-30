@@ -64,9 +64,9 @@ uv build
 
 Current core policy:
 
-- `langchain-core>=1.3.0,<1.4`
-- `langgraph>=1.1.8,<1.2`
-- `pydantic>=2.12.5,<3`
+- `langchain-core>=1.4,<1.5`
+- `langgraph>=1.2,<1.4`
+- `pydantic>=2.13,<2.14`
 
 ## Versioning policy
 

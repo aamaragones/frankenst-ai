@@ -74,6 +74,7 @@ def test_state_commander_returns_command_with_update() -> None:
     command = commander.command({"decision": "reject"})
 
     assert command.goto == "reject_node"
+    assert command.update is not None
     assert command.update["decision"] == "reject"
     assert command.update["messages"][-1].content == "command:reject"
 

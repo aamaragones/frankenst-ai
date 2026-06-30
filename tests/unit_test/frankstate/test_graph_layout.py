@@ -1,3 +1,5 @@
+from typing import cast
+
 import pytest
 
 from frankstate.entity.edge import SimpleEdge
@@ -11,7 +13,7 @@ class OrderedLayout(GraphLayout):
     PRIMARY_BUILDER: FakeRunnableBuilder
     SECONDARY_BUILDER: FakeRunnableBuilder
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.runtime_calls = 0
         self.layout_calls = 0
@@ -42,8 +44,8 @@ class OrderedLayout(GraphLayout):
 @pytest.mark.unit
 def test_build_runtime_requires_dict() -> None:
     class InvalidRuntimeLayout(GraphLayout):
-        def build_runtime(self):
-            return []
+        def build_runtime(self) -> dict[str, str]:
+            return []  # type: ignore[return-value]
 
         def layout(self) -> None:
             pass
@@ -89,7 +91,7 @@ def test_layout_must_not_return_value() -> None:
             return {}
 
         def layout(self) -> None:
-            return "unexpected"
+            return "unexpected"  # type: ignore[return-value]
 
     with pytest.raises(TypeError, match="must not return a value"):
         ReturningLayout().get_nodes()
@@ -116,7 +118,7 @@ def test_getters_preserve_order_and_build_once() -> None:
     assert layout.runtime_calls == 1
     assert layout.layout_calls == 1
     assert [node.name for node in nodes] == ["first_node", "second_node"]
-    assert [(edge.node_source, edge.node_path) for edge in edges] == [
+    assert [(edge.node_source, cast(SimpleEdge, edge).node_path) for edge in edges] == [
         ("first_node", "second_node"),
         ("second_node", "END"),
     ]

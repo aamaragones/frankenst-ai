@@ -31,7 +31,6 @@ from core_examples.components.runnables.structured_grade_document.structured_gra
 from core_examples.config.settings import get_settings
 from core_examples.models.structured_output.grade_documents import GradeDocuments
 from core_examples.utils.config_loader import load_node_registry
-from core_examples.utils.key_vault import get_secret
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.graph_layout import GraphLayout
 from frankstate.entity.node import SimpleNode
@@ -70,12 +69,17 @@ class AISearchAdaptiveRAGConfigGraph(GraphLayout):
         if LLMServices.model is None or LLMServices.embeddings is None:
             raise RuntimeError("LLMServices.launch() did not initialize model and embeddings.")
 
-        service_endpoint = get_secret("AZURE_SEARCH_SERVICE_ENDPOINT")
-        key = get_secret("AZURE_SEARCH_API_KEY")
+        service_endpoint = settings.azure.search_service_endpoint
+        api_key = settings.azure.search_api_key_value
+        if service_endpoint is None or api_key is None:
+            raise RuntimeError(
+                "Azure AI Search is not configured: set AZURE_SEARCH_SERVICE_ENDPOINT "
+                "and AZURE_SEARCH_API_KEY."
+            )
         search_client = SearchClient(
             service_endpoint,
             self.INDEX_NAME,
-            AzureKeyCredential(key),
+            AzureKeyCredential(api_key),
         )
         raw_retriever = AISearchMultiVectorRetriever(
             embeddings=LLMServices.embeddings,

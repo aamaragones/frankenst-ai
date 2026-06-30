@@ -1,9 +1,12 @@
 import asyncio
+from collections.abc import Coroutine
+from typing import Any, cast
 
 import pytest
 
 from tests.support.frankstate_doubles.builders import (
     FakeRunnableBuilder,
+    SpyRunnable,
 )
 
 
@@ -23,6 +26,6 @@ def test_runnable_builder_invoke_and_ainvoke_delegate_to_configured_runnable() -
     builder = FakeRunnableBuilder(sync_result="sync-result", async_result="async-result")
 
     assert builder.invoke("payload") == "sync-result"
-    assert asyncio.run(builder.ainvoke("payload")) == "async-result"
+    assert asyncio.run(cast(Coroutine[Any, Any, Any], builder.ainvoke("payload"))) == "async-result"
     assert builder.configure_calls == 1
-    assert builder.get().calls == [("invoke", "payload"), ("ainvoke", "payload")]
+    assert cast(SpyRunnable, builder.get()).calls == [("invoke", "payload"), ("ainvoke", "payload")]
