@@ -317,7 +317,7 @@ package's public contract.
 ```
 src/core_examples/
 ├── config/
-│   ├── config_llms.yml / config_nodes.yml / config_logging.yml
+│   ├── config_llms.yaml / config_nodes.yaml / config_logging.yaml
 │   ├── settings.py        # pydantic-settings + Azure Key Vault resolution
 │   └── layouts/           # concrete GraphLayout subclasses (agent, RAG, HITL)
 ├── components/            # edges / nodes / retrievers / runnables / tools
@@ -325,7 +325,7 @@ src/core_examples/
 └── utils/                 # config_loader, blob_storage, key_vault, logger, rag, ollama
 ```
 
-- **`config_nodes.yml`** is a node registry (`id`, `name`, `type`, `description`,
+- **`config_nodes.yaml`** is a node registry (`id`, `name`, `type`, `description`,
   optional `destinations`) consumed by layouts via `load_node_registry()`. It is a
   **helper**, intentionally limited to primitives — callable-based options (error
   handlers, exception types, cache key functions) belong in the layout, which is the
@@ -392,15 +392,15 @@ tests/
 
 ### Continuous validation & delivery
 
-The slice gate is defined once in a reusable workflow (`tests.yml`) and consumed by
+The slice gate is defined once in a reusable workflow (`tests.yaml`) and consumed by
 both the pull-request/`main` checks and the tag-driven release, so the same quality bar
 that guards a PR is re-run before anything is published.
 
 ```mermaid
 flowchart LR
-    PR["PR / push main"] --> CI["ci.yml"]
-    TAG["push tag x.y.z"] --> REL["release.yml"]
-    CI --> T["tests.yml<br/>ruff + mypy + pytest (frankstate slice)"]
+    PR["PR / push main"] --> CI["ci.yaml"]
+    TAG["push tag x.y.z"] --> REL["release.yaml"]
+    CI --> T["tests.yaml<br/>ruff + mypy + pytest (frankstate slice)"]
     REL --> T
     REL --> B["build wheel + sdist"] --> P["publish to PyPI"]
     B -. needs .-> T

@@ -27,7 +27,7 @@ phase while the public packaging and repository boundaries continue to mature.
 - `ToolGraphNode` entity that wraps a native LangGraph `ToolNode` so tool nodes flow through the same `BaseNode` pipeline and `add_node()` `kwargs` seam as `SimpleNode`/`CommandNode`.
 - `py.typed` marker shipped with the `frankstate` wheel (PEP 561) so consumers pick up inline types.
 - `WorkflowBuilder.to_mermaid(with_metadata=False)` returns the compiled graph as offline Mermaid text, showing only node names by default (pass `with_metadata=True` to keep node `metadata`).
-- Continuous integration on pull requests and `main` via a reusable `tests.yml` workflow (ruff + mypy + pytest of the `frankstate` slice) consumed by both `ci.yml` and `release.yml`, with a Python `3.12`/`3.13` matrix.
+- Continuous integration on pull requests and `main` via a reusable `tests.yaml` workflow (ruff + mypy + pytest of the `frankstate` slice) consumed by both `ci.yaml` and `release.yaml`, with a Python `3.12`/`3.13` matrix.
 - Coverage reporting with a `90%` floor for the package slice, a `pre-commit` configuration, and a packaging test that freezes the wheel to `frankstate*`.
 - Non-blocking dependency and secret scanning in CI (`pip-audit`, `gitleaks`).
 
@@ -35,12 +35,12 @@ phase while the public packaging and repository boundaries continue to mature.
 
 - `mypy` runs in `strict` mode over `src/frankstate` and `tests/support/frankstate_doubles`, with no `# type: ignore` suppressions.
 - Ruff lint extended with `N` (pep8-naming) and `D` (pydocstyle, google convention) for the package slice.
-- Renamed the example LLM configuration file from `config.yml` to `config_llms.yml` (resolved via `CoreSettings.config_llms_file_path`).
+- Renamed the example LLM configuration file from `config.yaml` to `config_llms.yaml` (resolved via `CoreSettings.config_llms_file_path`).
 - `ARCHITECTURE.md` is linked from `README.md` and `CONTRIBUTING.md` and documents the validation/delivery flow.
 
 ### Removed
 
-- **Breaking:** removed the `tags` parameter from `BaseNode`, `SimpleNode`, and `CommandNode`. Node wrappers now accept native `add_node()` options directly as `**kwargs` (collected into `BaseNode.kwargs` and forwarded verbatim, e.g. `SimpleNode(enhancer, name, metadata={...}, defer=True)`); keys are validated at construction against `add_node()`'s keyword-only parameters so typos fail fast. The example `config_nodes.yml` declares per-node `metadata` instead of `tags`/top-level `description`.
+- **Breaking:** removed the `tags` parameter from `BaseNode`, `SimpleNode`, and `CommandNode`. Node wrappers now accept native `add_node()` options directly as `**kwargs` (collected into `BaseNode.kwargs` and forwarded verbatim, e.g. `SimpleNode(enhancer, name, metadata={...}, defer=True)`); keys are validated at construction against `add_node()`'s keyword-only parameters so typos fail fast. The example `config_nodes.yaml` declares per-node `metadata` instead of `tags`/top-level `description`.
 
 ## [0.1.3] - 2026-05-15
 
@@ -114,11 +114,11 @@ phase while the public packaging and repository boundaries continue to mature.
 
 ### Added
 
-- Environment-driven logging controls through `LOG_LEVEL` and `LOG_TO_FILE`, plus a dedicated `config_logging.yml` template for repository defaults.
+- Environment-driven logging controls through `LOG_LEVEL` and `LOG_TO_FILE`, plus a dedicated `config_logging.yaml` template for repository defaults.
 
 ### Changed
 
-- Repository logging now uses `configure_logging()` plus `logging.config.dictConfig()` instead of embedding logging settings in `config.yml`.
+- Repository logging now uses `configure_logging()` plus `logging.config.dictConfig()` instead of embedding logging settings in `config.yaml`.
 - The local MCP server and notebook examples now target `fastmcp` over HTTP, expose both Oak and adaptive RAG tools from the same entrypoint, and make header/auth testing an explicit part of the research demo flow.
 - Module loggers across `frankstate`, example runnables and tools now use full module names via `logging.getLogger(__name__)` for clearer traces and filtering.
 - Release automation now uses the current major versions of the GitHub Actions involved in build, artifact upload/download and Python setup.

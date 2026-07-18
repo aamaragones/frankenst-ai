@@ -29,7 +29,7 @@ class _FakeSettings:
     default_log_file_path: Path | None = None
     config_logging_file_path: Path | None = field(
         default_factory=lambda: Path(__file__).resolve().parents[2]
-        / "src" / "core_examples" / "config" / "config_logging.yml"
+        / "src" / "core_examples" / "config" / "config_logging.yaml"
     )
 
 
@@ -181,7 +181,7 @@ def test_print_process_astream_accepts_command_input() -> None:
 
 
 def test_read_yaml_raises_for_empty_yaml(tmp_path: Path) -> None:
-    yaml_path = tmp_path / "empty.yml"
+    yaml_path = tmp_path / "empty.yaml"
     yaml_path.write_text("", encoding="utf-8")
 
     with pytest.raises(ValueError, match="is empty"):
@@ -189,7 +189,7 @@ def test_read_yaml_raises_for_empty_yaml(tmp_path: Path) -> None:
 
 
 def test_read_yaml_raises_for_non_mapping_root(tmp_path: Path) -> None:
-    yaml_path = tmp_path / "list-root.yml"
+    yaml_path = tmp_path / "list-root.yaml"
     yaml_path.write_text("- item\n- another\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="must contain a YAML mapping at the root"):
@@ -197,7 +197,7 @@ def test_read_yaml_raises_for_non_mapping_root(tmp_path: Path) -> None:
 
 
 def test_read_yaml_raises_for_empty_mapping(tmp_path: Path) -> None:
-    yaml_path = tmp_path / "empty-mapping.yml"
+    yaml_path = tmp_path / "empty-mapping.yaml"
     yaml_path.write_text("{}\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="must not be an empty mapping"):
@@ -205,7 +205,7 @@ def test_read_yaml_raises_for_empty_mapping(tmp_path: Path) -> None:
 
 
 def test_load_node_registry_validates_required_node_fields(tmp_path: Path) -> None:
-    yaml_path = tmp_path / "nodes.yml"
+    yaml_path = tmp_path / "nodes.yaml"
     yaml_path.write_text(
         "nodes:\n  - id: OAKLANG_NODE\n    type: enhancer\n    description: missing name\n",
         encoding="utf-8",

@@ -17,7 +17,7 @@ jobs:
     name: tests
     permissions:
       contents: read
-    uses: ./.github/workflows/tests.yml
+    uses: ./.github/workflows/tests.yaml
 
   full-suite:
     name: full suite (examples)

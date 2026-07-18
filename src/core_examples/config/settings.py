@@ -235,15 +235,15 @@ class CoreSettings(BaseSettings):
 
     @property
     def config_llms_file_path(self) -> Path:
-        return self.config_directory_path / "config_llms.yml"
+        return self.config_directory_path / "config_llms.yaml"
 
     @property
     def config_logging_file_path(self) -> Path:
-        return self.config_directory_path / "config_logging.yml"
+        return self.config_directory_path / "config_logging.yaml"
 
     @property
     def config_nodes_file_path(self) -> Path:
-        return self.config_directory_path / "config_nodes.yml"
+        return self.config_directory_path / "config_nodes.yaml"
 
 
 @lru_cache(maxsize=1)

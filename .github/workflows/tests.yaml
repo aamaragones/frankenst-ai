@@ -1,5 +1,5 @@
 # Reusable workflow: validates the published `frankstate` slice.
-# Called by both `ci.yml` (PR / push to main) and `release.yml` (tags)
+# Called by both `ci.yaml` (PR / push to main) and `release.yaml` (tags)
 name: tests
 
 on:

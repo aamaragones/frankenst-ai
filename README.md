@@ -215,13 +215,13 @@ The `graph` is still a LangGraph graph object produced through LangGraph's own r
 
 Runtime configuration is centralized in two layers:
 
-- `src/core_examples/config/settings.py` resolves environment-based settings and exposes the core repository paths for `config_llms.yml`, `config_nodes.yml` and `config_logging.yml`.
+- `src/core_examples/config/settings.py` resolves environment-based settings and exposes the core repository paths for `config_llms.yaml`, `config_nodes.yaml` and `config_logging.yaml`.
 - The YAML files keep the runtime graph, provider and logging templates. `settings.py` does not replace them; it centralizes their locations and the environment overrides around them.
 
 ## Repository Logging
 
 The repository now configures application logging through `configure_logging()` and the
-`src/core_examples/config/config_logging.yml` template.
+`src/core_examples/config/config_logging.yaml` template.
 
 - `LOG_LEVEL` controls the root log level. Default: `INFO`.
 - `LOG_TO_FILE` controls whether logs are also persisted under `logs/application.log`. Default: `false`.
@@ -304,8 +304,8 @@ frankenst-ai/
 │   │   │   ├── retrievers/           # Retrievers definitions, builders and integrations
 │   │   │   └── runnables/            # Executable LangChain RunnableBuilder modules for invoke or ainvoke logic
 │   │   ├── config/
-│   │   │   ├── config_llms.yml       # Main LLM/runtime configuration file for the project
-│   │   │   ├── config_nodes.yml      # Node registry used by the example graph layouts
+│   │   │   ├── config_llms.yaml       # Main LLM/runtime configuration file for the project
+│   │   │   ├── config_nodes.yaml      # Node registry used by the example graph layouts
 │   │   │   └── layouts/              # Reference GraphLayout subclasses using build_runtime() + layout()
 │   │   ├── models/                   # Structural models: StateGraph, tool properties, structured outputs, etc.
 │   │   └── utils/                  

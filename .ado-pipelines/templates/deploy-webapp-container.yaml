@@ -20,7 +20,7 @@ parameters:
     type: string
 
 jobs:
-  - template: run-docker-tests.yml
+  - template: run-docker-tests.yaml
     parameters:
       capability: ${{ parameters.capability }}
       uv_sync_args: '--group dev --extra examples'
@@ -34,8 +34,8 @@ jobs:
     steps:
       - checkout: self
         clean: true
-      - template: install-az-cli.yml
-      - template: build-and-push-acr.yml
+      - template: install-az-cli.yaml
+      - template: build-and-push-acr.yaml
         parameters:
           context_path: ${{ parameters.context_path }}
           dockerfile: ${{ parameters.dockerfile }}
@@ -55,7 +55,7 @@ jobs:
       runOnce:
         deploy:
           steps:
-            - template: webapp-container-to-acr.yml
+            - template: webapp-container-to-acr.yaml
               parameters:
                 webapp_name: '$(azure_webapp_service_name)'
                 image_name: '${{ parameters.image_name }}/${{ parameters.image_name }}:$(Build.BuildId)'

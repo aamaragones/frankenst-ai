@@ -13,4 +13,4 @@ variables:
   variable_group_pre: function-app.pre.vg
   variable_group_pro: function-app.pro.vg
 
-  AZ_CLI_VERSION: 2.84
+  AZ_CLI_VERSION: 2.87

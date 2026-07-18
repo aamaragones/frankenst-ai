@@ -1,6 +1,6 @@
 # 🧟 frankstate
 
-[![CI](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yaml/badge.svg?event=push)](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yaml?query=branch%3Amain)
 [![pypi](https://img.shields.io/pypi/v/frankstate.svg)](https://pypi.python.org/pypi/frankstate)
 [![license](https://img.shields.io/github/license/aamaragones/frankenst-ai.svg)](https://github.com/aamaragones/frankenst-ai/blob/main/LICENSE)
 [![downloads](https://static.pepy.tech/badge/frankstate/month)](https://pepy.tech/project/frankstate)

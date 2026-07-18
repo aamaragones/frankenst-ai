@@ -12,7 +12,7 @@ parameters:
   default: DEV
 
 variables:
-- template: config-variables.yml
+- template: config-variables.yaml
 
 trigger:
 - none
@@ -24,7 +24,7 @@ stages:
   variables:
   - group: ${{ variables.variable_group_dev }}
   jobs:
-  - template: templates/deploy-function-app-container.yml
+  - template: templates/deploy-function-app-container.yaml
     parameters:
       capability: ${{ variables.ap_pool_name }}
       environment: ${{ parameters.environment }}
@@ -37,7 +37,7 @@ stages:
 #   variables:
 #   - group: ${{ variables.variable_group_pre }}
 #   jobs:
-#   - template: templates/deploy-function-app-container.yml
+#   - template: templates/deploy-function-app-container.yaml
 #     parameters:
 #       capability: ${{ variables.ap_pool_name }}
 #       environment: ${{ parameters.environment }}
@@ -50,7 +50,7 @@ stages:
 #   variables:
 #   - group: ${{ variables.variable_group_pro }}
 #   jobs:
-#   - template: templates/deploy-function-app-container.yml
+#   - template: templates/deploy-function-app-container.yaml
 #     parameters:
 #       capability: ${{ variables.ap_pool_name }}
 #       environment: ${{ parameters.environment }}    
