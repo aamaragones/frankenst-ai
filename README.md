@@ -23,7 +23,7 @@ The project has been designed with the following goals:
 This repository is a mono-repo with four layers and different expectations of stability:
 
 - `src/frankstate` is the reusable pattern layer and the only code published in the base `frankstate` wheel.
-- `src/core_examples` is the repository reference package. It shows one concrete way to consume `frankstate`, but it is not the stable public API of the published package. Inside this mono-repo it may reuse shared adapters from `src/services/foundry` to keep example runtime bootstrap centralized.
+- `src/core_examples` is the repository reference package. It shows one concrete way to consume `frankstate`, but it is not the stable public API of the published package. Inside this mono-repo it may reuse shared adapters from `src/services/llm` to keep example runtime bootstrap centralized.
 - `src/services` is the integration layer for repository-specific runtimes and deployment entrypoints such as MCP servers or Azure Functions.
 - `research` contains exploratory notebooks and experiments. It is useful context, but it is not part of the repository's contractual surface.
 

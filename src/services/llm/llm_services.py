@@ -4,12 +4,8 @@ from dataclasses import dataclass
 from threading import Lock
 from typing import Any
 
-from azure.identity import DefaultAzureCredential
-from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
-from langchain_azure_ai.embeddings import AzureAIOpenAIApiEmbeddingsModel
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from core_examples.config.settings import get_settings
 from core_examples.utils.config_loader import read_yaml
@@ -19,43 +15,88 @@ from core_examples.utils.ollama.ollama_wsl_proxy import resolve_ollama_base_url
 logger = logging.getLogger(__name__)
 
 
+def _class_name(instance: Any) -> str | None:
+	"""Return the class name of an optional runtime for logging."""
+	return type(instance).__name__ if instance is not None else None
+
+
+@dataclass(frozen=True)
+class _ProviderSpec:
+	"""How a provider imports its runtime classes and prepares their kwargs."""
+
+	import_classes: Callable[[], dict[str, Any]]
+	prepare_kwargs: Callable[[dict[str, Any], str], dict[str, Any]]
+
+
 @dataclass(frozen=True)
 class LLMRuntime:
-	"""Resolved runtime objects exposed to the rest of the application."""
+	"""Resolved runtime objects exposed to the rest of the application.
 
-	model: BaseChatModel
-	embeddings: Embeddings
+	Each runtime kind is optional: it is None when config_llms.yaml does not
+	declare it (see LLMServices._load_declared_runtime).
+	"""
+
+	model: BaseChatModel | None = None
+	embeddings: Embeddings | None = None
 	turbo_model: BaseChatModel | None = None
 
 
 class LLMServices:
 	"""Centralized runtime builder for chat models and embeddings providers.
 
-	The class keeps a small provider registry with direct callables while
-	preserving provider-specific preparation logic in dedicated helpers.
-	Consumers should continue to call `launch()` and then read
-	`LLMServices.model` and `LLMServices.embeddings`.
+	Loading is driven entirely by the keys declared in config_llms.yaml: a
+	runtime kind (`model` / `embeddings` / `turbo_model`) is built only when
+	`launch.<kind>` selects a provider AND `<provider>.<kind>` declares its
+	kwargs. Anything not declared is skipped — including the provider package
+	import, which happens inside the provider's importer (`_ollama_classes` /
+	`_azure_ai_classes` / `_databricks_classes`) only when that provider is
+	actually used — so any combination of providers and kinds works.
+
+	Consumers call `launch()` and read `LLMServices.model`,
+	`LLMServices.embeddings` and `LLMServices.turbo_model`.
 	"""
+
+	RUNTIME_KINDS = ("model", "embeddings", "turbo_model")
 
 	model: BaseChatModel | None = None
 	embeddings: Embeddings | None = None
 	turbo_model: BaseChatModel | None = None
+	_launched = False
 	_launch_lock = Lock()
 
-	@classmethod
-	def _model_providers(cls) -> dict[str, Callable[[dict[str, Any]], BaseChatModel]]:
-		"""Return the provider registry used by the model dispatcher."""
+	@staticmethod
+	def _ollama_classes() -> dict[str, Any]:
+		"""Import langchain-ollama only when an ollama runtime is declared."""
+		from langchain_ollama import ChatOllama, OllamaEmbeddings
+
+		return {"model": ChatOllama, "embeddings": OllamaEmbeddings, "turbo_model": ChatOllama}
+
+	@staticmethod
+	def _azure_ai_classes() -> dict[str, Any]:
+		"""Import langchain-azure-ai only when an azure_ai runtime is declared."""
+		from langchain_azure_ai.chat_models import AzureAIOpenAIApiChatModel
+		from langchain_azure_ai.embeddings import AzureAIOpenAIApiEmbeddingsModel
+
 		return {
-			"ollama": cls._load_ollama_model,
-			"azure_ai": cls._load_azure_ai_model,
+			"model": AzureAIOpenAIApiChatModel,
+			"embeddings": AzureAIOpenAIApiEmbeddingsModel,
+			"turbo_model": AzureAIOpenAIApiChatModel,
 		}
 
+	@staticmethod
+	def _databricks_classes() -> dict[str, Any]:
+		"""Import databricks-langchain only when a databricks runtime is declared."""
+		from databricks_langchain import ChatDatabricks, DatabricksEmbeddings
+
+		return {"model": ChatDatabricks, "embeddings": DatabricksEmbeddings, "turbo_model": ChatDatabricks}
+
 	@classmethod
-	def _embeddings_providers(cls) -> dict[str, Callable[[dict[str, Any]], Embeddings]]:
-		"""Return the provider registry used by the embeddings dispatcher."""
+	def _providers(cls) -> dict[str, _ProviderSpec]:
+		"""Return the provider registry driving all runtime loading."""
 		return {
-			"ollama": cls._load_ollama_embeddings,
-			"azure_ai": cls._load_azure_ai_embeddings,
+			"ollama": _ProviderSpec(cls._ollama_classes, cls._prepare_ollama_kwargs),
+			"azure_ai": _ProviderSpec(cls._azure_ai_classes, cls._prepare_azure_ai_kwargs),
+			"databricks": _ProviderSpec(cls._databricks_classes, cls._prepare_databricks_kwargs),
 		}
 
 	@classmethod
@@ -76,10 +117,6 @@ class LLMServices:
 		launch_config = resolved_config.get("launch")
 		if not isinstance(launch_config, dict):
 			raise RuntimeError("Missing config section for: launch")
-
-		for key in ("model", "embeddings"):
-			if key not in launch_config:
-				raise RuntimeError(f"Missing config entry for: launch.{key}")
 
 		return resolved_config
 
@@ -166,10 +203,12 @@ class LLMServices:
 			raise RuntimeError(f"Missing config entry for: {config_path}.model")
 
 		# NOTE: use_responses_api false for Azure AI chat models since not all regions support it yet
-		if config_path.endswith(".model"):
+		if not config_path.endswith(".embeddings"):
 			kwargs.setdefault("use_responses_api", False)
 
 		if not kwargs.get("credential"):
+			from azure.identity import DefaultAzureCredential
+
 			kwargs["credential"] = DefaultAzureCredential()
 
 		credential = kwargs.get("credential")
@@ -194,83 +233,78 @@ class LLMServices:
 		return kwargs
 
 	@classmethod
-	def _load_ollama_model(cls, config: dict[str, Any]) -> BaseChatModel:
-		runtime_config = cls._require(config, "ollama.model", as_section=True)
-		kwargs = cls._prepare_ollama_kwargs(runtime_config, "ollama.model")
-		logger.info("Creating Ollama chat runtime for model '%s'.", kwargs.get("model"))
-		model = ChatOllama(**kwargs)
-		logger.info("Loaded Ollama chat runtime '%s'.", type(model).__name__)
-		return model
+	def _prepare_databricks_kwargs(cls, runtime_config: dict[str, Any], config_path: str) -> dict[str, Any]:
+		"""Resolve and apply the Databricks config validation owned by this project.
 
-	@classmethod
-	def _load_ollama_embeddings(cls, config: dict[str, Any]) -> Embeddings:
-		runtime_config = cls._require(config, "ollama.embeddings", as_section=True)
-		kwargs = cls._prepare_ollama_kwargs(runtime_config, "ollama.embeddings")
-		logger.info("Creating Ollama embeddings runtime for model '%s'.", kwargs.get("model"))
-		embeddings = OllamaEmbeddings(**kwargs)
-		logger.info("Loaded Ollama embeddings runtime '%s'.", type(embeddings).__name__)
-		return embeddings
+		This method intentionally validates only the local config contract and
+		leaves deeper client validation to `databricks_langchain`.
 
-	@classmethod
-	def _load_azure_ai_model(cls, config: dict[str, Any]) -> BaseChatModel:
-		runtime_config = cls._require(config, "azure_ai.model", as_section=True)
-		kwargs = cls._prepare_azure_ai_kwargs(runtime_config, "azure_ai.model")
-		model = AzureAIOpenAIApiChatModel(**kwargs)
-		client = getattr(model, "client", None)
-		async_client = getattr(model, "async_client", None)
+		`databricks_langchain` accepts `model` as an alias of `endpoint`; this
+		repository standardizes on `endpoint` (the serving endpoint / AI Gateway
+		model name), so defining both is rejected.
+
+		No credential is injected: authentication is delegated to the Databricks
+		SDK default chain (env DATABRICKS_HOST/DATABRICKS_TOKEN, a
+		`~/.databrickscfg` profile, or the ambient in-workspace identity).
+		"""
+		kwargs = cls._resolve_runtime_kwargs(runtime_config)
+		if kwargs.get("endpoint") and kwargs.get("model"):
+			raise RuntimeError(f"Config section {config_path} cannot define both endpoint and model.")
+
+		if not kwargs.get("endpoint"):
+			raise RuntimeError(f"Missing config entry for: {config_path}.endpoint")
+
 		logger.info(
-			"Loaded Azure AI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s",
-			"azure_ai.model",
-			type(model).__name__,
-			getattr(model, "model", kwargs.get("model")),
-			type(client).__name__ if client is not None else None,
-			type(async_client).__name__ if async_client is not None else None,
+			"Preparing Databricks runtime for %s: endpoint=%s temperature=%s max_tokens=%s",
+			config_path,
+			kwargs.get("endpoint"),
+			kwargs.get("temperature"),
+			kwargs.get("max_tokens"),
 		)
-		return model
+
+		return kwargs
 
 	@classmethod
-	def _load_azure_ai_embeddings(cls, config: dict[str, Any]) -> Embeddings:
-		runtime_config = cls._require(config, "azure_ai.embeddings", as_section=True)
-		kwargs = cls._prepare_azure_ai_kwargs(runtime_config, "azure_ai.embeddings")
-		embeddings = AzureAIOpenAIApiEmbeddingsModel(**kwargs)
-		client = getattr(embeddings, "client", None)
-		async_client = getattr(embeddings, "async_client", None)
+	def _load_declared_runtime(cls, config: dict[str, Any], kind: str) -> Any | None:
+		"""Load one runtime kind if config_llms declares it; skip it otherwise.
+
+		Generic key-driven loading: a runtime kind is built only when BOTH keys
+		exist — `launch.<kind>` selects the provider and `<provider>.<kind>` is a
+		mapping with its constructor kwargs. When either key is absent (e.g.
+		commented out) the runtime is skipped and the provider package is never
+		imported, so installs may carry any combination of providers and kinds.
+		"""
+		provider_name = config["launch"].get(kind)
+		if not provider_name:
+			logger.info("launch.%s is not declared — skipping the %s runtime.", kind, kind)
+			return None
+
+		spec = cls._providers().get(provider_name)
+		if spec is None:
+			raise ValueError(f"Unsupported provider type: {provider_name}")
+
+		config_path = f"{provider_name}.{kind}"
+		provider_section = config.get(provider_name)
+		runtime_config = provider_section.get(kind) if isinstance(provider_section, dict) else None
+		if not isinstance(runtime_config, dict):
+			logger.warning("Config section %s is not declared — skipping the %s runtime.", config_path, kind)
+			return None
+
+		kwargs = spec.prepare_kwargs(runtime_config, config_path)
+		runtime_class = spec.import_classes()[kind]
+		runtime = runtime_class(**kwargs)
 		logger.info(
-			"Loaded Azure AI runtime for %s: runtime_class=%s model=%s client_type=%s async_client_type=%s "
-			"has_embed_query=%s",
-			"azure_ai.embeddings",
-			type(embeddings).__name__,
-			getattr(embeddings, "model", kwargs.get("model")),
-			type(client).__name__ if client is not None else None,
-			type(async_client).__name__ if async_client is not None else None,
-			hasattr(embeddings, "embed_query"),
+			"Loaded %s runtime from %s: runtime_class=%s.",
+			kind,
+			config_path,
+			type(runtime).__name__,
 		)
-		return embeddings
-
-	@classmethod
-	def _load_model(cls, config: dict[str, Any], provider_name: str) -> BaseChatModel:
-		logger.info("Resolving chat model provider '%s'.", provider_name)
-		loader = cls._model_providers().get(provider_name)
-		if loader is None:
-			raise ValueError(f"Unsupported provider type: {provider_name}")
-		model = loader(config)
-		logger.info("Chat model provider '%s' loaded runtime '%s'.", provider_name, type(model).__name__)
-		return model
-
-	@classmethod
-	def _load_embeddings(cls, config: dict[str, Any], provider_name: str) -> Embeddings:
-		logger.info("Resolving embeddings provider '%s'.", provider_name)
-		loader = cls._embeddings_providers().get(provider_name)
-		if loader is None:
-			raise ValueError(f"Unsupported provider type: {provider_name}")
-		embeddings = loader(config)
-		logger.info("Embeddings provider '%s' loaded runtime '%s'.", provider_name, type(embeddings).__name__)
-		return embeddings
+		return runtime
 
 	@classmethod
 	def _current_runtime(cls) -> LLMRuntime | None:
 		"""Return the current shared runtime from class-level state if initialized."""
-		if cls.model is None or cls.embeddings is None:
+		if not cls._launched:
 			return None
 
 		return LLMRuntime(cls.model, cls.embeddings, cls.turbo_model)
@@ -279,22 +313,27 @@ class LLMServices:
 	def build_runtime(cls, config: dict[str, Any] | None = None) -> LLMRuntime:
 		"""Build a fresh runtime from config without mutating class attributes."""
 		resolved_config = cls._load_config(config)
-		model_provider = cls._require(resolved_config, "launch.model")
-		embeddings_provider = cls._require(resolved_config, "launch.embeddings")
+		launch_config = resolved_config["launch"]
 		logger.info(
-			"Building LLM runtime with providers model=%s embeddings=%s.",
-			model_provider,
-			embeddings_provider,
+			"Building LLM runtime with providers model=%s embeddings=%s turbo_model=%s.",
+			launch_config.get("model"),
+			launch_config.get("embeddings"),
+			launch_config.get("turbo_model"),
 		)
-		model = cls._load_model(resolved_config, model_provider)
-		embeddings = cls._load_embeddings(resolved_config, embeddings_provider)
+		runtimes = {kind: cls._load_declared_runtime(resolved_config, kind) for kind in cls.RUNTIME_KINDS}
+		if all(runtime is None for runtime in runtimes.values()):
+			raise RuntimeError(
+				"No runtime declared: config_llms.yaml must declare launch.model, launch.embeddings "
+				"and/or launch.turbo_model with a matching provider section."
+			)
+
 		logger.info(
-			"Built LLM runtime successfully: model_class=%s embeddings_class=%s turbo_model=%s.",
-			type(model).__name__,
-			type(embeddings).__name__,
-			None,
+			"Built LLM runtime successfully: model_class=%s embeddings_class=%s turbo_model_class=%s.",
+			_class_name(runtimes["model"]),
+			_class_name(runtimes["embeddings"]),
+			_class_name(runtimes["turbo_model"]),
 		)
-		return LLMRuntime(model, embeddings, None)
+		return LLMRuntime(runtimes["model"], runtimes["embeddings"], runtimes["turbo_model"])
 
 	@classmethod
 	def launch(cls, config: dict[str, Any] | None = None, *, force_reload: bool = False) -> LLMRuntime:
@@ -313,8 +352,8 @@ class LLMServices:
 		if current_runtime is not None:
 			logger.info(
 				"LLMServices.launch reusing cached runtime: model_class=%s embeddings_class=%s.",
-				type(current_runtime.model).__name__,
-				type(current_runtime.embeddings).__name__,
+				_class_name(current_runtime.model),
+				_class_name(current_runtime.embeddings),
 			)
 			return current_runtime
 
@@ -325,8 +364,8 @@ class LLMServices:
 				logger.info(
 					"LLMServices.launch found cached runtime after lock acquisition: "
 					"model_class=%s embeddings_class=%s.",
-					type(current_runtime.model).__name__,
-					type(current_runtime.embeddings).__name__,
+					_class_name(current_runtime.model),
+					_class_name(current_runtime.embeddings),
 				)
 				return current_runtime
 
@@ -339,10 +378,11 @@ class LLMServices:
 			cls.model = runtime.model
 			cls.embeddings = runtime.embeddings
 			cls.turbo_model = runtime.turbo_model
+			cls._launched = True
 			logger.info(
 				"LLMServices.launch published shared runtime: model_class=%s embeddings_class=%s turbo_model_class=%s.",
-				type(runtime.model).__name__,
-				type(runtime.embeddings).__name__,
-				type(runtime.turbo_model).__name__ if runtime.turbo_model is not None else None,
+				_class_name(runtime.model),
+				_class_name(runtime.embeddings),
+				_class_name(runtime.turbo_model),
 			)
 			return runtime

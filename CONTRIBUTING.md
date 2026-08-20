@@ -5,7 +5,7 @@
 This repository contains three different layers:
 
 - `src/frankstate`: reusable public package surface.
-- `src/core_examples`: reference package showing how to consume `frankstate`. It may reuse `src/services/foundry` as a repository adapter for shared runtime bootstrap, but should avoid depending on other service entrypoints.
+- `src/core_examples`: reference package showing how to consume `frankstate`. It may reuse `src/services/llm` as a repository adapter for shared runtime bootstrap, but should avoid depending on other service entrypoints.
 - `src/services`: runtime integrations and deployment-facing adapters.
 - `research`: exploratory material that can inform future work but is not part of the repository's contractual surface.
 

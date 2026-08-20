@@ -34,7 +34,7 @@ from core_examples.utils.config_loader import load_node_registry
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.graph_layout import GraphLayout
 from frankstate.entity.node import SimpleNode
-from services.foundry.llms import LLMServices
+from services.llm.llm_services import LLMServices
 
 
 # NOTE: This is an example implementation for illustration purposes

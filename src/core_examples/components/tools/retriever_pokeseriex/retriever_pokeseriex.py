@@ -5,7 +5,7 @@ from core_examples.components.retrievers.ai_search_simple_semantic_retriever.ai_
     AISearchSimpleSemanticRetriever,
 )
 from core_examples.utils.key_vault import get_secret
-from services.foundry.llms import LLMServices
+from services.llm.llm_services import LLMServices
 
 INDEX_NAME = "pokeseriex-index"
 

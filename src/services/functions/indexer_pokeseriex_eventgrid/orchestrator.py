@@ -8,7 +8,7 @@ from core_examples.utils.rag.ai_search_unstructured_indexer import (
     AISearchIndexManager,
     AISearchMultiVectorDocumentIndexer,
 )
-from services.foundry.llms import LLMServices
+from services.llm.llm_services import LLMServices
 
 INDEX_NAME = "pokeseriex-index"
 

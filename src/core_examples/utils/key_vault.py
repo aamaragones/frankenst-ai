@@ -1,9 +1,11 @@
 import os
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from azure.core.exceptions import ResourceNotFoundError
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
+# Azure packages are imported lazily: the environment-first path never needs
+# them, so Key Vault stays optional at install time.
+if TYPE_CHECKING:
+    from azure.keyvault.secrets import SecretClient
 
 
 def _to_keyvault_name(name: str) -> str:
@@ -17,7 +19,10 @@ def _to_keyvault_name(name: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def _get_secret_client(key_vault_name: str | None = None) -> SecretClient:
+def _get_secret_client(key_vault_name: str | None = None) -> "SecretClient":
+    from azure.identity import DefaultAzureCredential
+    from azure.keyvault.secrets import SecretClient
+
     key_vault_name = key_vault_name or os.getenv("AZURE_KEY_VAULT_NAME")
     if not key_vault_name:
         raise OSError("AZURE_KEY_VAULT_NAME environment variable is not set")
@@ -83,6 +88,8 @@ def get_secret(
     """
     if secret_value := os.getenv(secret_name):
         return secret_value
+
+    from azure.core.exceptions import ResourceNotFoundError
 
     client = _get_secret_client(key_vault_name)
     kv_secret_name = _to_keyvault_name(secret_name)

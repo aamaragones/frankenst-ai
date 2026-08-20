@@ -344,7 +344,7 @@ src/core_examples/
 
 | Subpackage | Purpose |
 |------------|---------|
-| `services/foundry` | `LLMServices` — Azure Foundry model bootstrap (launch + class-attribute access) |
+| `services/llm` | `LLMServices` — multi-provider model bootstrap (ollama, azure_ai, databricks; launch + class-attribute access) |
 | `services/functions` | Azure Functions app (indexer, retriever MCP tool, evolution MCP tool) |
 | `services/mcp` | MCP server entrypoint (`server_oaklang_agent.py`) |
 

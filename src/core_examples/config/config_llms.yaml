@@ -1,10 +1,14 @@
 # Global runtime configuration shared by notebooks, scripts and services.
 #
-# `launch.model` and `launch.embeddings` select the provider family used by
-# `LLMServices.build_runtime()` and `LLMServices.launch()`.
-# The provider-specific sections below define the constructor kwargs passed to
-# each backend client after resolving any `secret:` through `get_secret()`, which 
-# checks the environment first and then Azure Key Vault.
+# `launch.<kind>` (model / embeddings / turbo_model) selects the provider used
+# by `LLMServices.build_runtime()` and `LLMServices.launch()`. The provider
+# sections define the constructor kwargs passed to each backend client after
+# resolving any `secret:` through `get_secret()` (environment first, then
+# Azure Key Vault).
+#
+# Every runtime is optional: it is built only when `launch.<kind>` AND
+# `<provider>.<kind>` are declared. Comment out either key to skip it — the
+# provider package is then never imported.
 
 ollama:
   model:
@@ -30,8 +34,18 @@ azure_ai:
     model:
       secret: AZURE_EMBEDDINGS_MODEL_NAME
 
+databricks:
+  model:
+    # Serving endpoint / AI Gateway model name, e.g. "system.ai.gpt-5-6-sol".
+    endpoint:
+      secret: DATABRICKS_LLM_ENDPOINT
+    # The AI Gateway authenticates the ambient identity — no tokens anywhere.
+    use_ai_gateway: true
+  # embeddings:
+  #   endpoint:
+  #     secret: DATABRICKS_EMBEDDINGS_ENDPOINT
 
 launch:
-  model: ollama # azure_ai
-  embeddings: ollama # azure_ai
-  turbo_model: None
+  model: ollama # azure_ai | databricks
+  embeddings: ollama # azure_ai | databricks
+  # turbo_model: ollama

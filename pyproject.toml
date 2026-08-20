@@ -39,6 +39,7 @@ examples = [
     "azure-storage-blob",
     "langchain-azure-ai[opentelemetry]",
     "langchain-ollama",
+    "databricks-langchain",
     "langchain-chroma",
     "langchain-classic",
     "langchain-mcp-adapters",

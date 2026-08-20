@@ -17,7 +17,7 @@ from core_examples.models.stategraph.stategraph import SharedState
 from frankstate import WorkflowBuilder
 from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.node import SimpleNode, ToolGraphNode
-from services.foundry.llms import LLMServices
+from services.llm.llm_services import LLMServices
 from tests.support.core_doubles import ToolBindingFakeModel
 
 pytestmark = pytest.mark.unit
