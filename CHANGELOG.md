@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format follows Keep a Changelog and the project currently stays in the `0.x`
 phase while the public packaging and repository boundaries continue to mature.
 
+## [0.2.2] - 2026-08-20
+
+### Added
+
+- Synchronous and asynchronous streaming support to LCEL `RunnableBuilder` through `stream()` and `astream()`.
+
+### Changed
+
+- Updated the LCEL `RunnableBuilder` runnable contract and type annotations to include streaming capabilities alongside `invoke()` and `ainvoke()`.
+
 ## [0.2.1] - 2026-06-30
 
 ### Added
