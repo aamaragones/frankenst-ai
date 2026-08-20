@@ -1,7 +1,7 @@
 """RunnableBuilder lifecycle contract with prompt and retriever mixins."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable
+from collections.abc import AsyncIterator, Awaitable, Iterator
 from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -40,10 +40,10 @@ class RunnableBuilder(ABC):
     @abstractmethod
     def _configure_runnable(self) -> Runnable[Any, Any]:
         """Build and return the runnable chain.
-        
+
         Returns:
-            A fully configured LangChain `Runnable` ready for `invoke` or
-            `ainvoke`.
+            A fully configured LangChain `Runnable` ready for `invoke`,
+            `ainvoke`, `stream` or `astream`.
         """
         raise NotImplementedError
 
@@ -64,6 +64,14 @@ class RunnableBuilder(ABC):
     def ainvoke(self, input: Any) -> Awaitable[Any]:
         """Invoke the runnable asynchronously."""
         return self.runnable.ainvoke(input)
+
+    def stream(self, input: Any) -> Iterator[Any]:
+        """Stream the runnable output chunks synchronously."""
+        return self.runnable.stream(input)
+
+    def astream(self, input: Any) -> AsyncIterator[Any]:
+        """Stream the runnable output chunks asynchronously."""
+        return self.runnable.astream(input)
 
     def get(self) -> Runnable[Any, Any]:
         """Return the runnable, building it on first call."""
