@@ -44,13 +44,10 @@ class LLMRuntime:
 class LLMServices:
 	"""Centralized runtime builder for chat models and embeddings providers.
 
-	Loading is driven entirely by the keys declared in config_llms.yaml: a
-	runtime kind (`model` / `embeddings` / `turbo_model`) is built only when
-	`launch.<kind>` selects a provider AND `<provider>.<kind>` declares its
-	kwargs. Anything not declared is skipped — including the provider package
-	import, which happens inside the provider's importer (`_ollama_classes` /
-	`_azure_ai_classes` / `_databricks_classes`) only when that provider is
-	actually used — so any combination of providers and kinds works.
+	config_llms.yaml drives everything: a runtime kind (`model` / `embeddings` /
+	`turbo_model`) is built only when `launch.<kind>` selects a provider and
+	`<provider>.<kind>` declares its kwargs. What is not declared is skipped,
+	provider import included, so any combination installs and runs.
 
 	Consumers call `launch()` and read `LLMServices.model`,
 	`LLMServices.embeddings` and `LLMServices.turbo_model`.
@@ -58,10 +55,12 @@ class LLMServices:
 
 	RUNTIME_KINDS = ("model", "embeddings", "turbo_model")
 
+	# `_runtime` is the published runtime; the model / embeddings / turbo_model
+	# class attributes are the read-only mirror consumers are documented to read.
 	model: BaseChatModel | None = None
 	embeddings: Embeddings | None = None
 	turbo_model: BaseChatModel | None = None
-	_launched = False
+	_runtime: LLMRuntime | None = None
 	_launch_lock = Lock()
 
 	@staticmethod
@@ -119,25 +118,6 @@ class LLMServices:
 			raise RuntimeError("Missing config section for: launch")
 
 		return resolved_config
-
-	@classmethod
-	def _require(cls, config: dict[str, Any], path: str, *, as_section: bool = False) -> Any:
-		"""Read a dotted config path and optionally require that it resolves to a section.
-
-		When `as_section` is true, missing keys and non-mapping results are both
-		reported as missing config sections for the requested path.
-		"""
-		value: Any = config
-		for key in path.split("."):
-			if not isinstance(value, dict) or key not in value:
-				message_kind = "section" if as_section else "entry"
-				raise RuntimeError(f"Missing config {message_kind} for: {path}")
-			value = value[key]
-
-		if as_section and not isinstance(value, dict):
-			raise RuntimeError(f"Missing config section for: {path}")
-
-		return value
 
 	@classmethod
 	def _resolve_config_value(cls, value: Any) -> Any:
@@ -303,11 +283,8 @@ class LLMServices:
 
 	@classmethod
 	def _current_runtime(cls) -> LLMRuntime | None:
-		"""Return the current shared runtime from class-level state if initialized."""
-		if not cls._launched:
-			return None
-
-		return LLMRuntime(cls.model, cls.embeddings, cls.turbo_model)
+		"""Return the published shared runtime, if a launch already produced one."""
+		return cls._runtime
 
 	@classmethod
 	def build_runtime(cls, config: dict[str, Any] | None = None) -> LLMRuntime:
@@ -375,10 +352,10 @@ class LLMServices:
 			except Exception:
 				logger.exception("LLMServices.launch failed while building the shared runtime.")
 				raise
+			cls._runtime = runtime
 			cls.model = runtime.model
 			cls.embeddings = runtime.embeddings
 			cls.turbo_model = runtime.turbo_model
-			cls._launched = True
 			logger.info(
 				"LLMServices.launch published shared runtime: model_class=%s embeddings_class=%s turbo_model_class=%s.",
 				_class_name(runtime.model),
