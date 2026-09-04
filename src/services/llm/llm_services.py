@@ -219,25 +219,29 @@ class LLMServices:
 		This method intentionally validates only the local config contract and
 		leaves deeper client validation to `databricks_langchain`.
 
-		`databricks_langchain` accepts `model` as an alias of `endpoint`; this
-		repository standardizes on `endpoint` (the serving endpoint / AI Gateway
-		model name), so defining both is rejected.
+		`model` is the real field; `endpoint` is the deprecated alias
+		`databricks_langchain` still maps onto it. Either names the serving endpoint /
+		AI Gateway model, both together is ambiguous.
 
 		No credential is injected: authentication is delegated to the Databricks
 		SDK default chain (env DATABRICKS_HOST/DATABRICKS_TOKEN, a
 		`~/.databrickscfg` profile, or the ambient in-workspace identity).
 		"""
 		kwargs = cls._resolve_runtime_kwargs(runtime_config)
-		if kwargs.get("endpoint") and kwargs.get("model"):
+		endpoint = kwargs.get("endpoint")
+		model = kwargs.get("model")
+		if endpoint and model:
 			raise RuntimeError(f"Config section {config_path} cannot define both endpoint and model.")
 
-		if not kwargs.get("endpoint"):
-			raise RuntimeError(f"Missing config entry for: {config_path}.endpoint")
+		if not (endpoint or model):
+			raise RuntimeError(
+				f"Config section {config_path} must define model (or the deprecated endpoint alias)."
+			)
 
 		logger.info(
 			"Preparing Databricks runtime for %s: endpoint=%s temperature=%s max_tokens=%s",
 			config_path,
-			kwargs.get("endpoint"),
+			endpoint or model,
 			kwargs.get("temperature"),
 			kwargs.get("max_tokens"),
 		)

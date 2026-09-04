@@ -183,7 +183,7 @@ def test_llmservices_databricks_requires_endpoint() -> None:
 		"databricks": {"model": {"max_tokens": 1024}},
 	}
 
-	with pytest.raises(RuntimeError, match="Missing config entry for: databricks.model.endpoint"):
+	with pytest.raises(RuntimeError, match="Config section databricks.model must define model"):
 		llms_module.LLMServices.build_runtime(config)
 
 
