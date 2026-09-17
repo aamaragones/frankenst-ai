@@ -4,6 +4,12 @@
      each release is prepended, so anything added by hand sinks to the
      bottom. The title above is kept in place by `changelogTitle`. -->
 
+## [0.2.3](https://github.com/aamaragones/frankenst-ai/compare/0.2.2...0.2.3) (2026-09-17)
+
+### Bug Fixes
+
+* **deps:** require langchain-core >=1.6,<1.7 ([#1](https://github.com/aamaragones/frankenst-ai/issues/1)) ([90935f8](https://github.com/aamaragones/frankenst-ai/commit/90935f8dcdb72a4d3dfce5453626be329aa86805))
+
 <!-- Entries below were written by hand (Keep a Changelog) before semantic-release took over at 0.2.3. -->
 
 ## [0.2.2] - 2026-08-20
