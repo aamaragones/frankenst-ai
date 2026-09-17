@@ -83,11 +83,9 @@ default-groups = ["dev"]
 where = ["src"]
 include = ["frankstate", "frankstate.*"]
 namespaces = false
-# The published core wheel intentionally contains only `frankstate`.
-# `core_examples` remains the documented reference package of this repository.
+# Only `frankstate` ships; config, utils, core_ai_examples and services stay in the repo.
 
 [tool.setuptools.package-data]
-# Ship the PEP 561 marker so consumers pick up `frankstate` inline types.
 frankstate = ["py.typed"]
 
 [tool.ruff]
@@ -97,23 +95,30 @@ extend-include = ["*.ipynb"]
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "N", "D"]
-ignore = ["E501", "D107"]
+# RUF100 catches a `# noqa` that no longer suppresses anything.
+select = ["E", "F", "I", "UP", "B", "N", "D", "RUF100"]
+ignore = ["E501", "D104", "D107"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-# Docstring convention (D) is enforced only on the published `frankstate` slice.
-# The example, service and notebook trees stay fully linted for everything else.
+# D stays off where the 15% comment budget leaves no room for one-line docstrings.
 "tests/**" = ["D"]
-"src/core_examples/**" = ["D"]
-"src/services/**" = ["D"]
 "research/**" = ["D"]
+"src/core_ai_examples/**" = ["D"]
+"src/services/functions/**" = ["D"]
+"src/services/mcp/**" = ["D"]
+# Module and class docstrings stay required here; one per method would only restate the name.
+"src/config/**" = ["D102", "D103", "D105"]
+"src/utils/**" = ["D102", "D103", "D105"]
+"src/services/llm/**" = ["D102", "D103", "D105"]
+".github/scripts/**" = ["D102", "D103", "D105"]
+"main.py" = ["D102", "D103", "D105"]
 
 [tool.mypy]
 python_version = "3.12"
-files = ["src/frankstate", "tests/support/frankstate_doubles"]
+files = ["src", "tests/support", ".github/scripts", "main.py"]
 strict = true
 explicit_package_bases = true
 mypy_path = ["src"]
@@ -123,28 +128,35 @@ warn_redundant_casts = true
 allow_redefinition = true
 
 [[tool.mypy.overrides]]
-module = ["IPython", "IPython.*", "mypy-yaml.*"]
+module = ["langchain_azure_ai.*", "databricks_langchain.*", "IPython", "IPython.*"]
 ignore_missing_imports = true
+
+# function_app.py is assembled inside the Functions container, where the blueprints
+# are top-level modules; azure.functions ships no types for Blueprint.
+[[tool.mypy.overrides]]
+module = ["get_evolution_mcptool.*", "indexer_pokeseriex_eventgrid.*", "retriever_pokeseriex_mcptool.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["services.functions.*"]
+disable_error_code = ["no-untyped-call"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit_test", "tests/integration_test"]
-pythonpath = ["."]
+pythonpath = ["src", ".", ".github/scripts"]
 python_files = ["test_*.py"]
 addopts = "-ra"
-# `tests/unit_test/frankstate` contains the Frankstate patterns suite.
-# `tests/unit_test/core_examples` contains example/reference tests for layouts and
-# runnable builders built on top of the Frankenst-AI patterns.
-# `tests/integration_test` contains smoke coverage for compiled workflows and
-# packaging-adjacent execution flows that should run in the default suite.
 markers = [
     "unit: fast Frankenst-AI contract tests",
-    "integration: compiled workflows and external services (e.g., FastAPI , Microsoft Foundry)",
+    "integration: compiled workflows and packaging flows (wheel build)",
 ]
 
 [tool.coverage.run]
-source = ["src/frankstate"]
+source = ["src", ".github/scripts", "main.py"]
 branch = true
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 90
+# Whole-tree floor, measured at 47% before the refactor; ratchet it up, never down.
+fail_under = 45
+exclude_lines = ["pragma: no cover", 'if __name__ == "__main__":']

@@ -1,0 +1,27 @@
+import logging
+from typing import Any
+
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import Runnable, RunnableLambda
+
+from frankstate.entity.runnable_builder import RetrieverMixin, RunnableBuilder
+from utils.rag.processing import parse_context, parse_docs
+
+
+class MultimodalRetriever(RetrieverMixin, RunnableBuilder):
+    logger: logging.Logger = logging.getLogger(__name__)
+
+    def __init__(self, model: BaseChatModel, retriever: BaseRetriever) -> None:
+        """Compose a multimodal retrieval runnable from a pre-built retriever."""
+        super().__init__(model=model, retriever=retriever)
+
+        self.logger.info("MultimodalRetriever initialized")
+
+    def _configure_runnable(self) -> Runnable[Any, Any]:
+        """Compose retriever output parsing into the runnable returned by invoke or ainvoke."""
+        multimodal_retriever_parse_chain = (
+            self.retriever | RunnableLambda(parse_docs) | RunnableLambda(parse_context)
+        )
+
+        return multimodal_retriever_parse_chain

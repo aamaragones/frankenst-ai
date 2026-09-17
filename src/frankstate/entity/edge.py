@@ -12,11 +12,12 @@ class BaseEdge:
     def __init__(self, node_source: str | Literal["START", "END"]):
         self.node_source = node_source
 
+
 class SimpleEdge(BaseEdge):
     """Static edge definition used with StateGraph.add_edge."""
 
     def __init__(
-        self, 
+        self,
         node_source: str | Literal["START", "END"],
         node_path: str | Literal["START", "END"],
     ):

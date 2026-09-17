@@ -1,0 +1,52 @@
+# One runtime per `launch` key: `launch.<kind>: <provider>` plus `<provider>.<kind>`
+# holding the constructor kwargs. `{secret: NAME}` leaves resolve through settings
+# (env first, then Key Vault). `embeddings` or `*_embeddings` builds the provider's
+# embeddings class; any other name builds its chat class.
+
+ollama:
+  model:
+    model: gemma4:e4b-it-qat # qwen3.5:9b-q4_K_M
+    temperature: 0
+  embeddings:
+    model: embeddinggemma
+
+azure_ai:
+  model:
+    project_endpoint:
+      secret: AZURE_FOUNDRY_PROJECT_ENDPOINT
+    model:
+      secret: AZURE_INFERENCE_MODEL_NAME
+    temperature: 0
+    # Not every Foundry region serves /v1/responses yet; opt in per deployment.
+    use_responses_api: false
+  embeddings:
+    endpoint:
+      secret: AZURE_EMBEDDINGS_ENDPOINT
+    model:
+      secret: AZURE_EMBEDDINGS_MODEL_NAME
+
+databricks:
+  model:
+    # `model`, not the `endpoint` alias databricks_langchain deprecated.
+    model:
+      secret: DATABRICKS_LLM_ENDPOINT
+    use_ai_gateway: true
+    # Reasoning endpoints reject function tools on /v1/chat/completions, so the
+    # tool-calling agent needs this route. Structured output branches on it
+    # (StructuredGradeDocument); nothing here streams tokens, so no delta parser.
+    use_responses_api: true
+    max_tokens: 1024
+  low_model:
+    model: databricks-gpt-5-6-luna
+    use_ai_gateway: true
+    use_responses_api: true
+    max_tokens: 1024
+  embeddings:
+    endpoint:
+      secret: DATABRICKS_EMBEDDINGS_ENDPOINT
+
+launch:
+  model: ollama # azure_ai | databricks
+  embeddings: ollama # azure_ai | databricks
+  low_model: databricks
+  # judge: databricks   # any name works: LLMServices.get("judge") / runtime.judge

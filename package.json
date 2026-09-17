@@ -1,0 +1,12 @@
+{
+  "name": "frankenst-ai-release",
+  "private": true,
+  "description": "semantic-release tooling for frankenst-ai (versioning, changelog, GitHub release; PyPI upload is a workflow step)",
+  "devDependencies": {
+    "semantic-release": "^24.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "conventional-changelog-conventionalcommits": "^8.0.0"
+  }
+}

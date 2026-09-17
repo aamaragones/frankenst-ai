@@ -54,7 +54,9 @@ def test_command_node_requires_destinations_attribute() -> None:
 @pytest.mark.unit
 def test_node_rejects_unsupported_add_node_option_at_construction() -> None:
     with pytest.raises(TypeError, match="unsupported add_node option"):
-        SimpleNode(StaticMessageEnhancer("simple"), name="simple_node", retry_polcy=None)
+        SimpleNode(
+            StaticMessageEnhancer("simple"), name="simple_node", retry_polcy=None
+        )
 
 
 @pytest.mark.unit
@@ -91,7 +93,9 @@ def test_configs_nodes_resolve_wrapper_callables_metadata_and_destinations() -> 
         "defer": True,
         "metadata": {"owner": "simple"},
     }
-    assert asyncio.run(simple_action({"messages": []}))["messages"][-1].content == "simple"
+    assert (
+        asyncio.run(simple_action({"messages": []}))["messages"][-1].content == "simple"
+    )
 
     assert command_name == "command_node"
     assert command_kwargs == {

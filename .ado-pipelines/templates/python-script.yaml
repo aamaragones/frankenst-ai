@@ -30,13 +30,13 @@ jobs:
       name: ${{ parameters.capability }}
     steps:
     - checkout: self
- 
+
     - task: UsePythonVersion@0
       displayName: 'Select Python version'
       inputs:
         versionSpec: '3.12'
         addToPath: true
- 
+
     - script: |
         set -euo pipefail
         curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -45,7 +45,7 @@ jobs:
         echo "Syncing environment with uv..."
         uv sync --frozen ${{ parameters.uv_sync_args }}
       displayName: 'Sync Python dependencies with uv'
- 
+
     - ${{ if ne(parameters.service_connection, '') }}:
       - task: AzureCLI@2
         displayName: 'Execute Python script with service connection'

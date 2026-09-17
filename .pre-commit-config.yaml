@@ -1,5 +1,3 @@
-# Pre-commit hooks scoped to the published `frankstate` slice.
-# Run `uv run pre-commit install` once, then hooks run on every commit.
 minimum_pre_commit_version: "4.0.0"
 
 default_language_version:
@@ -14,23 +12,30 @@ repos:
       - id: check-yaml
       - id: check-toml
       - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.13
     hooks:
-      - id: ruff
-        name: ruff (frankstate)
-        args: ["--fix"]
-        files: ^(src/frankstate|tests/unit_test/frankstate|tests/support/frankstate_doubles)/
+      - id: ruff-check
+        args: ["--fix", "--exit-non-zero-on-fix"]
+        types_or: [python, pyi]
       - id: ruff-format
-        name: ruff-format (frankstate)
-        files: ^(src/frankstate|tests/unit_test/frankstate|tests/support/frankstate_doubles)/
+        types_or: [python, pyi]
 
   - repo: local
     hooks:
-      - id: mypy-frankstate
-        name: mypy (frankstate)
-        entry: uv run mypy src/frankstate
+      - id: mypy
+        name: mypy (strict)
+        entry: uv run mypy
         language: system
         pass_filenames: false
-        files: ^src/frankstate/
+        types_or: [python, pyi]
+      - id: comment-ratio
+        name: comment ratio
+        entry: uv run python .github/scripts/comment_ratio.py --max 0.15 --report-only src/frankstate
+        language: system
+        types: [python]
+        exclude: ^(research|tests)/

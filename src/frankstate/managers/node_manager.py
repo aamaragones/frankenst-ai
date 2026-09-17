@@ -19,14 +19,17 @@ class NodeManager:
     """
 
     logger: logging.Logger = logging.getLogger(__name__)
-    
+
     def __init__(self) -> None:
         self.nodes: dict[str, SimpleNode | CommandNode | ToolGraphNode] = {}
         self.logger.info("NodeManager initialized")
-    
+
     def _normalize_nodes(
         self,
-        nodes: SimpleNode | CommandNode | ToolGraphNode | Iterable[SimpleNode | CommandNode | ToolGraphNode],
+        nodes: SimpleNode
+        | CommandNode
+        | ToolGraphNode
+        | Iterable[SimpleNode | CommandNode | ToolGraphNode],
     ) -> list[SimpleNode | CommandNode | ToolGraphNode]:
         """Return nodes as a list while supporting single-node inputs."""
         if isinstance(nodes, SimpleNode | CommandNode | ToolGraphNode):
@@ -45,7 +48,9 @@ class NodeManager:
         else:
             raise TypeError(f"Unexpected node type: {type(node)}")
 
-    def _get_node_kwargs(self, node: SimpleNode | CommandNode | ToolGraphNode) -> dict[str, Any]:
+    def _get_node_kwargs(
+        self, node: SimpleNode | CommandNode | ToolGraphNode
+    ) -> dict[str, Any]:
         """Return keyword arguments forwarded verbatim to `StateGraph.add_node()`.
 
         Wrapper `kwargs` (for example `metadata`, `retry_policy` or `timeout`)
@@ -67,7 +72,10 @@ class NodeManager:
 
     def add_nodes(
         self,
-        nodes: SimpleNode | CommandNode | ToolGraphNode | Iterable[SimpleNode | CommandNode | ToolGraphNode],
+        nodes: SimpleNode
+        | CommandNode
+        | ToolGraphNode
+        | Iterable[SimpleNode | CommandNode | ToolGraphNode],
     ) -> None:
         """Add one or more supported node instances to the internal registry.
 

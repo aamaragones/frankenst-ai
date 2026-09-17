@@ -22,7 +22,9 @@ class OrderedLayout(GraphLayout):
         self.runtime_calls += 1
         return {
             "PRIMARY_BUILDER": FakeRunnableBuilder(async_result={"content": "first"}),
-            "SECONDARY_BUILDER": FakeRunnableBuilder(async_result={"content": "second"}),
+            "SECONDARY_BUILDER": FakeRunnableBuilder(
+                async_result={"content": "second"}
+            ),
         }
 
     def layout(self) -> None:

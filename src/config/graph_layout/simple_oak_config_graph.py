@@ -1,0 +1,95 @@
+"""The smallest layout: one tool-calling agent and its tool node."""
+
+from typing import Any
+
+from langgraph.graph import END, START
+from langgraph.prebuilt import ToolNode
+
+from config.settings import get_settings
+from core_ai_examples.components.edges.evaluators.route_tool_condition import (
+    RouteToolCondition,
+)
+from core_ai_examples.components.nodes.enhancers.simple_messages_ainvoke import (
+    SimpleMessagesAsyncInvoke,
+)
+from core_ai_examples.components.runnables.oaklang_agent.oaklang_agent import (
+    OakLangAgent,
+)
+from core_ai_examples.components.tools.get_evolution.get_evolution_tool import (
+    GetEvolutionTool,
+)
+from core_ai_examples.components.tools.random_movements.random_movements_tool import (
+    RandomMovementsTool,
+)
+from frankstate.entity.edge import ConditionalEdge, SimpleEdge
+from frankstate.entity.graph_layout import GraphLayout
+from frankstate.entity.node import SimpleNode, ToolGraphNode
+from services.llm.llm_services import LLMServices
+from utils.config_loader import load_node_registry
+
+
+# NOTE: This is an example implementation for illustration purposes
+# NOTE: Here you can add other subgraphs as nodes
+class SimpleOakConfigGraph(GraphLayout):
+    """Minimal agent-with-tools layout.
+
+    State expectations:
+        - Uses `SharedState` or another messages-compatible schema.
+        - The agent node reads `messages` and appends a new assistant message.
+
+    Flow:
+        START -> OakLangAgent -> (OakTools | END)
+        OakTools -> OakLangAgent
+
+    This layout is the simplest starting point when the graph only needs a tool
+    loop and does not require human review or retrieval-specific state.
+    """
+
+    CONFIG_NODES: dict[str, Any]
+    OAKLANG_AGENT: OakLangAgent
+
+    def build_runtime(self) -> dict[str, Any]:
+        settings = get_settings()
+        (model,) = LLMServices.launch().require("model")
+
+        get_evolution_tool = GetEvolutionTool()
+        random_movements_tool = RandomMovementsTool()
+
+        return {
+            "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
+            "OAKLANG_AGENT": OakLangAgent(
+                model=model,
+                tools=[get_evolution_tool, random_movements_tool],
+            ),
+        }
+
+    def layout(self) -> None:
+        ## NODES
+        self.OAKLANG_NODE = SimpleNode(
+            enhancer=SimpleMessagesAsyncInvoke(self.OAKLANG_AGENT),
+            name=self.CONFIG_NODES["OAKLANG_NODE"]["name"],
+            metadata=self.CONFIG_NODES["OAKLANG_NODE"]["metadata"],
+        )
+        self.OAKTOOLS_NODE = ToolGraphNode(
+            tool_node=ToolNode(
+                tools=self.OAKLANG_AGENT.tools or [],
+                name=self.CONFIG_NODES["OAKTOOLS_NODE"]["name"],
+            ),
+            name=self.CONFIG_NODES["OAKTOOLS_NODE"]["name"],
+            metadata=self.CONFIG_NODES["OAKTOOLS_NODE"]["metadata"],
+        )
+
+        ## EDGES
+        self._EDGE_1 = SimpleEdge(node_source=START, node_path=self.OAKLANG_NODE.name)
+        self._EDGE_2 = SimpleEdge(
+            node_source=self.OAKTOOLS_NODE.name,
+            node_path=self.OAKLANG_NODE.name,
+        )
+        self._EDGE_3 = ConditionalEdge(
+            evaluator=RouteToolCondition(),
+            map_dict={
+                "end": END,
+                "tools": self.OAKTOOLS_NODE.name,
+            },
+            node_source=self.OAKLANG_NODE.name,
+        )

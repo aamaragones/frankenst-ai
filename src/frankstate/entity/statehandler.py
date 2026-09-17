@@ -33,15 +33,18 @@ class StateEvaluator(ABC):
         self,
         runnable_builder: RunnableBuilder | None = None,
         **kwargs: Any,
-
-        ):
-        self.runnable: Runnable[Any, Any] | None = runnable_builder.get() if runnable_builder else None
+    ):
+        self.runnable: Runnable[Any, Any] | None = (
+            runnable_builder.get() if runnable_builder else None
+        )
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
     @abstractmethod
-    def evaluate(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> str | Awaitable[str]:
+    def evaluate(
+        self, state: list[AnyMessage] | dict[str, Any] | BaseModel
+    ) -> str | Awaitable[str]:
         """Return the routing key used by a conditional edge path map.
 
         The returned value must match one of the keys declared in the
@@ -71,20 +74,22 @@ class StateEnhancer(ABC):
     """
 
     def __init__(
-            self,
-            runnable_builder: RunnableBuilder | None = None,
-            **kwargs: Any,
-        ):
-        
-        self.runnable: Runnable[Any, Any] | None = runnable_builder.get() if runnable_builder else None
-         
+        self,
+        runnable_builder: RunnableBuilder | None = None,
+        **kwargs: Any,
+    ):
+
+        self.runnable: Runnable[Any, Any] | None = (
+            runnable_builder.get() if runnable_builder else None
+        )
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        
-        
     @abstractmethod
-    def enhance(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> dict[str, Any] | Awaitable[dict[str, Any]]:
+    def enhance(
+        self, state: list[AnyMessage] | dict[str, Any] | BaseModel
+    ) -> dict[str, Any] | Awaitable[dict[str, Any]]:
         """Return a partial state update produced by runnable or custom enhance logic.
 
         The returned mapping is merged by LangGraph into the current state. The
@@ -96,6 +101,7 @@ class StateEnhancer(ABC):
         they use `invoke()` or `ainvoke()`.
         """
         pass
+
 
 class StateCommander(ABC):
     """Base contract for nodes that route with LangGraph Command.
@@ -139,7 +145,9 @@ class StateCommander(ABC):
         return destinations
 
     @abstractmethod
-    def command(self, state: list[AnyMessage] | dict[str, Any] | BaseModel) -> Command[str]:
+    def command(
+        self, state: list[AnyMessage] | dict[str, Any] | BaseModel
+    ) -> Command[str]:
         """Return a `Command` that routes the graph and optionally updates state.
 
         The `goto` value must match a node name registered in the compiled graph.

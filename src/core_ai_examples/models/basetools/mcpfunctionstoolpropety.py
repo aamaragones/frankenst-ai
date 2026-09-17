@@ -1,0 +1,15 @@
+from typing import Any
+
+
+class MCPFunctionsToolProperty:
+    def __init__(self, property_name: str, property_type: str, description: str):
+        self.propertyName = property_name
+        self.propertyType = property_type
+        self.description = description
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "propertyName": self.propertyName,
+            "propertyType": self.propertyType,
+            "description": self.description,
+        }

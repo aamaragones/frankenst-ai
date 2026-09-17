@@ -177,3 +177,8 @@ cython_debug/
 .chroma_db/
 artifacts/.chromadb/
 artifacts/.docstore/
+# Node (semantic-release)
+node_modules/
+
+# make audit
+.audit-requirements.txt

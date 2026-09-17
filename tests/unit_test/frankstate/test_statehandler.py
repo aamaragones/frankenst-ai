@@ -69,7 +69,9 @@ def test_statehandler_base_contracts_are_not_async_only() -> None:
 
 @pytest.mark.unit
 def test_state_commander_returns_command_with_update() -> None:
-    commander = RoutingCommander(destinations={"accept": "accept_node", "reject": "reject_node"})
+    commander = RoutingCommander(
+        destinations={"accept": "accept_node", "reject": "reject_node"}
+    )
 
     command = commander.command({"decision": "reject"})
 
@@ -90,5 +92,7 @@ def test_state_commander_destinations_returns_backing_mapping() -> None:
 def test_state_commander_destinations_requires_property_or_backing_attr() -> None:
     commander = MissingDestinationsCommander()
 
-    with pytest.raises(AttributeError, match=r"must expose a 'destinations: dict\[str, str\]' property"):
+    with pytest.raises(
+        AttributeError, match=r"must expose a 'destinations: dict\[str, str\]' property"
+    ):
         _ = commander.destinations

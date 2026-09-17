@@ -93,7 +93,9 @@ def test_workflow_builder_compiles_linear_layout_once_and_runs_async_enhancer() 
 
     first_compiled = builder.compile()
     second_compiled = builder.compile()
-    result = asyncio.run(first_compiled.ainvoke({"messages": [HumanMessage(content="hi")]}))
+    result = asyncio.run(
+        first_compiled.ainvoke({"messages": [HumanMessage(content="hi")]})
+    )
 
     assert first_compiled is not None
     assert second_compiled is not None
@@ -101,7 +103,9 @@ def test_workflow_builder_compiles_linear_layout_once_and_runs_async_enhancer() 
     assert cast(LinearAsyncLayout, builder.config).runtime_calls == 1
     assert cast(LinearAsyncLayout, builder.config).layout_calls == 1
     assert result["messages"][-1].content == "linear-response"
-    assert first_compiled.get_graph().nodes["linear_node"].metadata == {"tags": ["linear"]}
+    assert first_compiled.get_graph().nodes["linear_node"].metadata == {
+        "tags": ["linear"]
+    }
 
 
 @pytest.mark.unit
@@ -117,7 +121,9 @@ def test_workflow_builder_passes_node_kwargs_through_add_node() -> None:
                 defer=True,
                 metadata={"owner": "core", "tags": ["kwargs"]},
             )
-            self.START_EDGE = SimpleEdge(node_source=START, node_path=self.KWARGS_NODE.name)
+            self.START_EDGE = SimpleEdge(
+                node_source=START, node_path=self.KWARGS_NODE.name
+            )
             self.END_EDGE = SimpleEdge(node_source=self.KWARGS_NODE.name, node_path=END)
 
     builder = WorkflowBuilder(config=NodeKwargsLayout, state_schema=FrankTestState)
@@ -187,7 +193,9 @@ def test_workflow_builder_compiles_linear_layout_and_runs_sync_enhancer() -> Non
     result = compiled.invoke({"messages": [HumanMessage(content="hi")]})
 
     assert result["messages"][-1].content == "linear-sync-response"
-    assert compiled.get_graph().nodes["linear_sync_node"].metadata == {"tags": ["linear-sync"]}
+    assert compiled.get_graph().nodes["linear_sync_node"].metadata == {
+        "tags": ["linear-sync"]
+    }
 
 
 @pytest.mark.unit
@@ -195,8 +203,12 @@ def test_workflow_builder_compiles_linear_layout_and_runs_sync_enhancer() -> Non
     ("route", "expected"),
     [("accept", "accepted"), ("reject", "rejected")],
 )
-def test_workflow_builder_routes_conditional_edges_through_langgraph(route: str, expected: str) -> None:
-    builder = WorkflowBuilder(config=ConditionalAsyncLayout, state_schema=FrankTestState)
+def test_workflow_builder_routes_conditional_edges_through_langgraph(
+    route: str, expected: str
+) -> None:
+    builder = WorkflowBuilder(
+        config=ConditionalAsyncLayout, state_schema=FrankTestState
+    )
     compiled = builder.compile()
 
     result = asyncio.run(
@@ -223,8 +235,12 @@ def test_workflow_builder_routes_conditional_edges_through_langgraph(route: str,
     ("route", "expected"),
     [("accept", "accepted"), ("reject", "rejected")],
 )
-def test_workflow_builder_routes_async_evaluators_through_langgraph(route: str, expected: str) -> None:
-    builder = WorkflowBuilder(config=ConditionalAsyncEvaluatorLayout, state_schema=FrankTestState)
+def test_workflow_builder_routes_async_evaluators_through_langgraph(
+    route: str, expected: str
+) -> None:
+    builder = WorkflowBuilder(
+        config=ConditionalAsyncEvaluatorLayout, state_schema=FrankTestState
+    )
     compiled = builder.compile()
 
     result = asyncio.run(
@@ -244,7 +260,9 @@ def test_workflow_builder_routes_async_evaluators_through_langgraph(route: str, 
     ("decision", "expected_message"),
     [("accept", "accepted"), ("reject", "rejected")],
 )
-def test_workflow_builder_routes_command_nodes_and_applies_updates(decision: str, expected_message: str) -> None:
+def test_workflow_builder_routes_command_nodes_and_applies_updates(
+    decision: str, expected_message: str
+) -> None:
     builder = WorkflowBuilder(config=CommandAsyncLayout, state_schema=FrankTestState)
     compiled = builder.compile()
 
@@ -260,7 +278,9 @@ def test_workflow_builder_routes_command_nodes_and_applies_updates(decision: str
     assert result["decision"] == decision
     assert result["messages"][-2].content == f"command:{decision}"
     assert result["messages"][-1].content == expected_message
-    assert cast(CommandNode, builder.node_manager.nodes["command_node"]).destinations == (
+    assert cast(
+        CommandNode, builder.node_manager.nodes["command_node"]
+    ).destinations == (
         "accept_node",
         "reject_node",
     )

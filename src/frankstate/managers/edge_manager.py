@@ -19,7 +19,7 @@ class EdgeManager:
     """
 
     logger: logging.Logger = logging.getLogger(__name__)
-    
+
     def __init__(self) -> None:
         self.edges: list[SimpleEdge | ConditionalEdge] = []
         self.logger.info("EdgeManager initialized")
@@ -34,33 +34,47 @@ class EdgeManager:
 
         return list(edges)
 
-    def add_edges(self, edges: SimpleEdge | ConditionalEdge | Iterable[SimpleEdge | ConditionalEdge]) -> None:
+    def add_edges(
+        self,
+        edges: SimpleEdge | ConditionalEdge | Iterable[SimpleEdge | ConditionalEdge],
+    ) -> None:
         """Add one or more edges to the registry preserving declaration order."""
         for edge in self._normalize_edges(edges):
             if isinstance(edge, SimpleEdge | ConditionalEdge):
                 self.edges.append(edge)
             else:
-                raise TypeError(f"Each edge must be a SimpleEdge or ConditionalEdge, got {type(edge)}")
+                raise TypeError(
+                    f"Each edge must be a SimpleEdge or ConditionalEdge, got {type(edge)}"
+                )
 
     def get_edges(
         self,
         filter_type: type[SimpleEdge] | type[ConditionalEdge] | None = None,
-    ) -> tuple[SimpleEdge | ConditionalEdge, ...] | tuple[SimpleEdge, ...] | tuple[ConditionalEdge, ...]:
+    ) -> (
+        tuple[SimpleEdge | ConditionalEdge, ...]
+        | tuple[SimpleEdge, ...]
+        | tuple[ConditionalEdge, ...]
+    ):
         """Retrieve registered edges, optionally filtered by exact edge class."""
         if filter_type is None:
             return tuple(self.edges)
-        elif isinstance(filter_type, type) and issubclass(filter_type, SimpleEdge | ConditionalEdge):
+        elif isinstance(filter_type, type) and issubclass(
+            filter_type, SimpleEdge | ConditionalEdge
+        ):
             return tuple(edge for edge in self.edges if type(edge) is filter_type)
         else:
-            raise TypeError(f"Each edge must be a SimpleEdge or ConditionalEdge, expected {type(filter_type)}")
+            raise TypeError(
+                f"Each edge must be a SimpleEdge or ConditionalEdge, expected {type(filter_type)}"
+            )
 
     def configs_edges(self) -> tuple[tuple[str, str], ...]:
         """Return ordered tuples of `(node_source, node_path)` for `StateGraph.add_edge()`."""
         return tuple(
             (edge.node_source, edge.node_path)
-            for edge in self.edges if isinstance(edge, SimpleEdge)
+            for edge in self.edges
+            if isinstance(edge, SimpleEdge)
         )
-    
+
     def configs_conditional_edges(
         self,
     ) -> tuple[tuple[str, Any, dict[Hashable, str | Literal["START", "END"]]], ...]:
@@ -70,5 +84,6 @@ class EdgeManager:
         """
         return tuple(
             (edge.node_source, edge.evaluator.evaluate, edge.map_dict)
-            for edge in self.edges if isinstance(edge, ConditionalEdge)
+            for edge in self.edges
+            if isinstance(edge, ConditionalEdge)
         )

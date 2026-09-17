@@ -1,6 +1,6 @@
 # 🧟 frankstate
 
-[![CI](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yaml/badge.svg?event=push)](https://github.com/aamaragones/frankenst-ai/actions/workflows/ci.yaml?query=branch%3Amain)
+[![release](https://github.com/aamaragones/frankenst-ai/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/aamaragones/frankenst-ai/actions/workflows/release.yaml?query=branch%3Amain)
 [![pypi](https://img.shields.io/pypi/v/frankstate.svg)](https://pypi.python.org/pypi/frankstate)
 [![license](https://img.shields.io/github/license/aamaragones/frankenst-ai.svg)](https://github.com/aamaragones/frankenst-ai/blob/main/LICENSE)
 [![downloads](https://static.pepy.tech/badge/frankstate/month)](https://pepy.tech/project/frankstate)
@@ -14,10 +14,11 @@ It does not replace LangGraph and it does not introduce a separate runtime. The 
 
 The published package focuses on reusable workflow assembly contracts:
 
-- `WorkflowBuilder` to compile a graph from a layout class.
+- `WorkflowBuilder` to compile a graph from a layout class, and `to_mermaid()` to render it.
 - `GraphLayout` to separate runtime dependency construction from graph declaration.
 - `SimpleNode`, `CommandNode`, `ToolGraphNode`, `SimpleEdge`, and `ConditionalEdge` to model graph structure.
 - `StateEnhancer`, `StateEvaluator`, and `StateCommander` to keep node and routing logic aligned with LangGraph concepts.
+- `RunnableBuilder` with `PromptMixin` and `RetrieverMixin` to assemble LCEL chains inside a layout.
 - `NodeManager` and `EdgeManager` to normalize layout declarations into LangGraph registration calls.
 
 ## Public API
@@ -36,7 +37,7 @@ from frankstate.entity.graph_layout import GraphLayout
 from frankstate.entity.node import SimpleNode, CommandNode, ToolGraphNode
 from frankstate.entity.edge import SimpleEdge, ConditionalEdge
 from frankstate.entity.statehandler import StateEnhancer, StateEvaluator, StateCommander
-from frankstate.entity.runnable_builder import RunnableBuilder
+from frankstate.entity.runnable_builder import RunnableBuilder, PromptMixin, RetrieverMixin
 from frankstate.managers.node_manager import NodeManager
 from frankstate.managers.edge_manager import EdgeManager
 ```
@@ -78,7 +79,10 @@ workflow_builder = WorkflowBuilder(
 )
 
 graph = workflow_builder.compile()
+print(workflow_builder.to_mermaid())   # the topology as a Mermaid diagram
 ```
+
+`graph` is a native LangGraph `CompiledStateGraph`.
 
 ## LangGraph Alignment
 
@@ -95,16 +99,14 @@ The compiled graph still relies on LangGraph's own `StateGraph`, `add_node()`, `
 If you are browsing the repository instead of the published package:
 
 - `src/frankstate` is the reusable package.
-- `src/core_examples` is the repository reference layer.
+- `src/core_ai_examples` is the repository reference layer.
 - `src/services` contains repository integrations and deployment entrypoints.
 
 Those repository layers help demonstrate how `frankstate` can be consumed, but they are not the stable public API of the base wheel.
 
 ## Runnable Builders
 
-The following structure 
-
-`RunnableBuilder` is a recommended way to organize LangChain LCEL builders inside a layout. 
+`RunnableBuilder` is a recommended way to organize LangChain LCEL builders inside a layout.
 Optional capabilities can be added through cooperative multiple inheritance using mixins:
 
 | Mixin | Adds |
@@ -120,4 +122,4 @@ RAGBuilder    → RetrieverMixin, PromptMixin, RunnableBuilder   # retriever + p
 AgentBuilder  → PromptMixin, RunnableBuilder                   # prompt + tools (tools stored in subclass)
 ```
 
-Working examples live in `src/core_examples/components/runnables/`.
+Working examples live in the repository under `src/core_ai_examples/components/runnables/`.

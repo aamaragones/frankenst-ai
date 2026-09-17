@@ -1,31 +1,51 @@
+# Release and publish in one run: semantic-release pushes the tag with GITHUB_TOKEN,
+# and GitHub starts no workflow for that push, so a tag-triggered publish would
+# never fire. `dist/` exists only when a version was cut, which gates the upload.
 name: release
 
 on:
   push:
-    tags:
-      - "*.*.*"
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run semantic-release without committing, tagging or publishing
+        type: boolean
+        default: false
+      republish_tag:
+        description: Rebuild an existing tag and upload it to PyPI (upload failed after the tag)
+        type: string
+        default: ""
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
-  tests:
-    name: tests
+  quality:
+    name: quality
     permissions:
       contents: read
-    uses: ./.github/workflows/tests.yaml
+    uses: ./.github/workflows/ci.yaml
+    secrets: inherit
 
-  build:
-    needs: tests
+  release:
+    name: release
+    needs: quality
+    if: github.event_name == 'push' || inputs.dry_run
     runs-on: ubuntu-latest
+    environment:
+      name: release
     permissions:
-      contents: read
-    outputs:
-      version: ${{ steps.meta.outputs.version }}
+      contents: write
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -35,90 +55,73 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
+          version: "0.12.5"
           enable-cache: true
           cache-suffix: release
-
-      - name: Extract release version from tag
-        id: meta
-        run: echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-
-      - name: Validate tag matches pyproject version
-        env:
-          RELEASE_VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          python - <<'PY'
-          import os
-          import tomllib
-
-          with open("pyproject.toml", "rb") as file_handle:
-              pyproject = tomllib.load(file_handle)
-
-          tag_version = os.environ["RELEASE_VERSION"]
-          package_version = pyproject["project"]["version"]
-
-          if tag_version != package_version:
-              raise SystemExit(
-                  f"Tag version {tag_version} does not match pyproject version {package_version}"
-              )
-          PY
 
       - name: Sync project with development dependencies
         run: uv sync --frozen --group dev
 
-      - name: Clean packaging artifacts
-        run: rm -rf build dist src/frankstate.egg-info
-
-      - name: Build wheel and sdist
-        run: uv build
-
-      - name: Validate distributions
-        run: uv run twine check dist/*
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v7
+      - name: Set up Node
+        uses: actions/setup-node@v5
         with:
-          name: dist
-          path: dist/
+          node-version: "20"
 
-  publish-to-pypi:
-    name: Publish to PyPI
-    needs: build
+      - name: Install release tooling
+        run: npm install --no-audit --no-fund
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: npx semantic-release $DRY_RUN
+
+      - name: Detect a cut release
+        id: dist
+        run: |
+          if ls dist/*.whl >/dev/null 2>&1; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish distribution to PyPI
+        if: steps.dist.outputs.released == 'true' && !inputs.dry_run
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  republish:
+    name: republish
+    needs: quality
+    if: inputs.republish_tag != ''
     runs-on: ubuntu-latest
     environment:
       name: release
     permissions:
+      contents: read
       id-token: write
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v8
+      - name: Checkout tag
+        uses: actions/checkout@v6
         with:
-          name: dist
-          path: dist/
+          ref: ${{ inputs.republish_tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+          cache-suffix: republish
+
+      - name: Sync project with development dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Build wheel and sdist
+        run: make build
 
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-
-  create-github-release:
-    name: Create GitHub Release
-    needs:
-      - build
-      - publish-to-pypi
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_VERSION: ${{ needs.build.outputs.version }}
-        run: |
-          gh release create "$RELEASE_VERSION" dist/* \
-            --title "$RELEASE_VERSION" \
-            --generate-notes
