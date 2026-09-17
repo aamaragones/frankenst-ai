@@ -37,12 +37,15 @@ class LLMRuntime:
 
     @property
     def kinds(self) -> tuple[str, ...]:
+        """The `launch` keys, in declaration order."""
         return tuple(self._clients)
 
     def __contains__(self, kind: object) -> bool:
+        """Whether `launch` declared this kind."""
         return kind in self._clients
 
     def __getattr__(self, kind: str) -> Any:
+        """`runtime.judge` is the client launched under `judge`."""
         if kind.startswith("_"):
             raise AttributeError(kind)
         try:
@@ -273,4 +276,5 @@ class LLMServices:
 
     @classmethod
     def reset(cls) -> None:
+        """Forget the published runtime; the test seam."""
         cls._runtime = None
