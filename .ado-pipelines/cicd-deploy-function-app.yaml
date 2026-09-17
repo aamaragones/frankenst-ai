@@ -53,6 +53,6 @@ stages:
 #   - template: templates/deploy-function-app-container.yaml
 #     parameters:
 #       capability: ${{ variables.ap_pool_name }}
-#       environment: ${{ parameters.environment }}    
+#       environment: ${{ parameters.environment }}
 #       image_name: my-mcps-function-app
 #       service_connection: ${{ variables.ado_service_connection_rg_pro }}

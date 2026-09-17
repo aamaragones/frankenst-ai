@@ -1,0 +1,39 @@
+# Logging configuration consumed by logging.config.dictConfig().
+#
+# Schema overview:
+# - `formatters`: reusable message templates shared by handlers.
+# - `handlers`: output targets and handler-level thresholds.
+# - `root`: default logging policy applied across the application.
+# - `loggers`: per-library overrides used to reduce dependency noise.
+#
+# Runtime notes:
+# - `LOG_LEVEL` overrides the root level in logger.py.
+# - `LOG_TO_FILE` is disabled by default and only adds the `file` handler when enabled.
+# - The `file.filename` value is injected at runtime from the project constants.
+
+version: 1
+disable_existing_loggers: false
+formatters:
+  standard:
+    format: "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: standard
+    stream: ext://sys.stderr
+  file:
+    class: logging.FileHandler
+    formatter: standard
+    filename: application.log
+root:
+  level: INFO
+  handlers:
+    - console
+loggers:
+  azure:
+    level: WARNING
+  azure.core:
+    level: WARNING
+  urllib3:
+    level: WARNING

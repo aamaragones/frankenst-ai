@@ -38,7 +38,9 @@ class LinearAsyncLayout(GraphLayout):
     def build_runtime(self) -> dict[str, Any]:
         self.runtime_calls += 1
         return {
-            "RUNNABLE_BUILDER": FakeRunnableBuilder(async_result={"content": "linear-response"})
+            "RUNNABLE_BUILDER": FakeRunnableBuilder(
+                async_result={"content": "linear-response"}
+            )
         }
 
     def layout(self) -> None:
@@ -167,7 +169,9 @@ class CommandAsyncLayout(GraphLayout):
             metadata={"tags": ["reject"]},
         )
 
-        self.START_EDGE = SimpleEdge(node_source=START, node_path=self.COMMAND_NODE.name)
+        self.START_EDGE = SimpleEdge(
+            node_source=START, node_path=self.COMMAND_NODE.name
+        )
         self.ACCEPT_EDGE = SimpleEdge(node_source=self.ACCEPT_NODE.name, node_path=END)
         self.REJECT_EDGE = SimpleEdge(node_source=self.REJECT_NODE.name, node_path=END)
 
@@ -183,13 +187,17 @@ class LinearSyncLayout(GraphLayout):
     def build_runtime(self) -> dict[str, Any]:
         self.runtime_calls += 1
         return {
-            "RUNNABLE_BUILDER": FakeRunnableBuilder(sync_result={"content": "linear-sync-response"})
+            "RUNNABLE_BUILDER": FakeRunnableBuilder(
+                sync_result={"content": "linear-sync-response"}
+            )
         }
 
     def layout(self) -> None:
         self.layout_calls += 1
         self.LINEAR_NODE = SimpleNode(
-            enhancer=SyncRunnableMessageEnhancer(runnable_builder=self.RUNNABLE_BUILDER),
+            enhancer=SyncRunnableMessageEnhancer(
+                runnable_builder=self.RUNNABLE_BUILDER
+            ),
             name="linear_sync_node",
             metadata={"tags": ["linear-sync"]},
         )
@@ -237,5 +245,7 @@ class ToolLoopLayout(GraphLayout):
             },
             evaluator=ToolCallEvaluator(),
         )
-        self.TOOL_EDGE = SimpleEdge(node_source=self.TOOL_NODE.name, node_path=self.SUMMARY_NODE.name)
+        self.TOOL_EDGE = SimpleEdge(
+            node_source=self.TOOL_NODE.name, node_path=self.SUMMARY_NODE.name
+        )
         self.END_EDGE = SimpleEdge(node_source=self.SUMMARY_NODE.name, node_path=END)

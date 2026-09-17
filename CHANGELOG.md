@@ -1,9 +1,10 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+<!-- Generated and maintained by semantic-release. Do not edit manually:
+     each release is prepended, so anything added by hand sinks to the
+     bottom. The title above is kept in place by `changelogTitle`. -->
 
-The format follows Keep a Changelog and the project currently stays in the `0.x`
-phase while the public packaging and repository boundaries continue to mature.
+<!-- Entries below were written by hand (Keep a Changelog) before semantic-release took over at 0.2.3. -->
 
 ## [0.2.2] - 2026-08-20
 

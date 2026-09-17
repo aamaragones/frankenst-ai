@@ -1,0 +1,158 @@
+{
+  "name": "default-multivector",
+  "fields": [
+    {
+      "name": "id",
+      "type": "Edm.String",
+      "key": true,
+      "retrievable": true,
+      "searchable": false,
+      "filterable": false,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "type",
+      "type": "Edm.String",
+      "key": false,
+      "retrievable": true,
+      "searchable": false,
+      "filterable": true,
+      "sortable": true,
+      "facetable": false
+    },
+    {
+      "name": "content",
+      "type": "Edm.String",
+      "searchable": true,
+      "analyzer": "standard.lucene"
+    },
+    {
+      "name": "summary",
+      "type": "Edm.String",
+      "key": false,
+      "retrievable": true,
+      "searchable": false,
+      "filterable": true,
+      "sortable": false,
+      "facetable": false
+    },
+    {
+      "name": "metadata",
+      "type": "Edm.ComplexType",
+      "fields": [
+        {
+          "name": "filetype",
+          "type": "Edm.String",
+          "key": false,
+          "retrievable": true,
+          "searchable": false,
+          "filterable": true,
+          "sortable": false,
+          "facetable": false
+        },
+        {
+          "name": "languages",
+          "type": "Edm.String",
+          "key": false,
+          "retrievable": true,
+          "searchable": false,
+          "filterable": true,
+          "sortable": false,
+          "facetable": false
+        },
+        {
+          "name": "last_modified",
+          "type": "Edm.DateTimeOffset",
+          "key": false,
+          "retrievable": true,
+          "searchable": false,
+          "filterable": true,
+          "sortable": true,
+          "facetable": false
+        },
+        {
+          "name": "page_number",
+          "type": "Edm.Int32",
+          "key": false,
+          "retrievable": true,
+          "searchable": false,
+          "filterable": true,
+          "sortable": false,
+          "facetable": false
+        },
+        {
+          "name": "file_directory",
+          "type": "Edm.String",
+          "key": false,
+          "retrievable": true,
+          "searchable": false,
+          "filterable": true,
+          "sortable": false,
+          "facetable": false
+        },
+        {
+          "name": "filename",
+          "type": "Edm.String",
+          "key": false,
+          "retrievable": true,
+          "searchable": false,
+          "filterable": true,
+          "sortable": false,
+          "facetable": false
+        },
+        {
+          "name": "uri",
+          "type": "Edm.String",
+          "key": false,
+          "retrievable": true,
+          "searchable": false,
+          "filterable": true,
+          "sortable": false,
+          "facetable": false
+        }
+      ]
+    },
+    {
+      "name": "embeddings",
+      "type": "Collection(Edm.Single)",
+      "searchable": true,
+      "dimensions": 1536,
+      "vectorSearchProfile": "perfilHnsw"
+    }
+  ],
+  "corsOptions": {
+    "allowedOrigins": [
+      "*"
+    ],
+    "maxAgeInSeconds": 60
+  },
+  "semantic": {
+    "configurations": [
+      {
+        "name": "default",
+        "prioritizedFields": {
+          "prioritizedContentFields": [
+            {
+              "fieldName": "content"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "vectorSearch": {
+    "profiles": [
+      {
+        "name": "perfilHnsw",
+        "algorithm": "hnsw"
+      }
+    ],
+    "algorithms": [
+      {
+        "name": "hnsw",
+        "kind": "hnsw"
+      }
+    ]
+  }
+}

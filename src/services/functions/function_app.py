@@ -15,6 +15,10 @@ except ModuleNotFoundError as exc:
 app = func.FunctionApp()
 
 # Register all the Blueprint apps
-bps = [bp_1, bp_2, bp_3, ]
+bps = [
+    bp_1,
+    bp_2,
+    bp_3,
+]
 for bp in bps:
     app.register_functions(bp)

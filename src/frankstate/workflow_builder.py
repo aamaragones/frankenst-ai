@@ -25,7 +25,7 @@ class WorkflowBuilder:
     """
 
     logger: logging.Logger = logging.getLogger(__name__)
-    
+
     def __init__(
         self,
         config: type[GraphLayout],
@@ -96,7 +96,7 @@ class WorkflowBuilder:
         """Configure the workflow once before any compile or visualization step."""
         if not self._workflow_configured:
             self._configure_workflow()
-        
+
     def _configure_workflow(self) -> None:
         """Assemble the workflow from the nodes and edges discovered in the layout."""
         self._configure_nodes()
@@ -106,7 +106,11 @@ class WorkflowBuilder:
         self._configure_edges()
         for config in self.edge_manager.configs_edges():
             self.workflow.add_edge(*config)
-        for node_source, router, path_map in self.edge_manager.configs_conditional_edges():
+        for (
+            node_source,
+            router,
+            path_map,
+        ) in self.edge_manager.configs_conditional_edges():
             self.workflow.add_conditional_edges(
                 node_source,
                 router,
@@ -114,11 +118,11 @@ class WorkflowBuilder:
             )
 
         self._workflow_configured = True
-    
+
     def _configure_nodes(self) -> None:
         """Load node definitions from the layout into the node manager."""
         self.node_manager.add_nodes(nodes=self.config.get_nodes())
 
     def _configure_edges(self) -> None:
-        """Load edge definitions from the layout into the edge manager."""        
+        """Load edge definitions from the layout into the edge manager."""
         self.edge_manager.add_edges(edges=self.config.get_edges())

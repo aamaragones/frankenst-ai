@@ -1,0 +1,53 @@
+{
+  "branches": ["main"],
+  "tagFormat": "${version}",
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "preset": "conventionalcommits",
+      "releaseRules": [
+        {"breaking": true, "release": "minor"},
+        {"type": "docs", "release": "patch"},
+        {"type": "refactor", "release": "patch"},
+        {"type": "test", "release": "patch"},
+        {"type": "style", "release": "patch"}
+      ]
+    }],
+    ["@semantic-release/release-notes-generator", {
+      "preset": "conventionalcommits",
+      "presetConfig": {
+        "types": [
+          {"type": "feat", "section": "Features"},
+          {"type": "fix", "section": "Bug Fixes"},
+          {"type": "perf", "section": "Performance"},
+          {"type": "revert", "section": "Reverts"},
+          {"type": "docs", "section": "Documentation"},
+          {"type": "refactor", "section": "Refactoring"},
+          {"type": "test", "section": "Tests"},
+          {"type": "style", "section": "Style"},
+          {"type": "chore", "hidden": true},
+          {"type": "build", "hidden": true},
+          {"type": "ci", "hidden": true}
+        ]
+      }
+    }],
+    ["@semantic-release/changelog", {
+      "changelogFile": "CHANGELOG.md",
+      "changelogTitle": "# Changelog\n\n<!-- Generated and maintained by semantic-release. Do not edit manually:\n     each release is prepended, so anything added by hand sinks to the\n     bottom. The title above is kept in place by `changelogTitle`. -->"
+    }],
+    ["@semantic-release/exec", {
+      "verifyConditionsCmd": "uv version --short",
+      "prepareCmd": "make release-prepare VERSION=${nextRelease.version}"
+    }],
+    ["@semantic-release/git", {
+      "assets": ["CHANGELOG.md", "pyproject.toml", "uv.lock"]
+    }],
+    ["@semantic-release/github", {
+      "assets": [{"path": "dist/*.whl"}, {"path": "dist/*.tar.gz"}],
+      "successComment": false,
+      "failComment": false,
+      "failTitle": false,
+      "labels": false,
+      "releasedLabels": false
+    }]
+  ]
+}

@@ -1,0 +1,27 @@
+# The PR title becomes the squash commit, which is all semantic-release reads: an
+# unparseable title merges green and cuts no version. Compound titles ("a | b")
+# are allowed when one PR carries two themes.
+name: pr-title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-title:
+    name: Validate title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: bash .github/scripts/validate-pr-title.sh "$PR_TITLE"

@@ -175,4 +175,3 @@ class PromptMixin(ABC):
             `_configure_runnable`.
         """
         raise NotImplementedError
-

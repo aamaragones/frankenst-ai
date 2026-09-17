@@ -23,9 +23,17 @@ def test_runnable_builder_get_caches_configured_runnable() -> None:
 
 @pytest.mark.unit
 def test_runnable_builder_invoke_and_ainvoke_delegate_to_configured_runnable() -> None:
-    builder = FakeRunnableBuilder(sync_result="sync-result", async_result="async-result")
+    builder = FakeRunnableBuilder(
+        sync_result="sync-result", async_result="async-result"
+    )
 
     assert builder.invoke("payload") == "sync-result"
-    assert asyncio.run(cast(Coroutine[Any, Any, Any], builder.ainvoke("payload"))) == "async-result"
+    assert (
+        asyncio.run(cast(Coroutine[Any, Any, Any], builder.ainvoke("payload")))
+        == "async-result"
+    )
     assert builder.configure_calls == 1
-    assert cast(SpyRunnable, builder.get()).calls == [("invoke", "payload"), ("ainvoke", "payload")]
+    assert cast(SpyRunnable, builder.get()).calls == [
+        ("invoke", "payload"),
+        ("ainvoke", "payload"),
+    ]

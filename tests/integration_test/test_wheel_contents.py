@@ -44,5 +44,5 @@ def test_wheel_contains_only_frankstate(tmp_path: Path) -> None:
 
     assert _top_level_packages(names) == {"frankstate"}
     assert "frankstate/py.typed" in names
-    assert not any(name.startswith("core_examples/") for name in names)
-    assert not any(name.startswith("services/") for name in names)
+    private = ("core_ai_examples/", "config/", "utils/", "services/")
+    assert not any(name.startswith(private) for name in names)

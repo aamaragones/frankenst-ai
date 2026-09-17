@@ -1,4 +1,4 @@
-from core_examples.models.basetools.mcpfunctionstoolpropety import (
+from core_ai_examples.models.basetools.mcpfunctionstoolpropety import (
     MCPFunctionsToolProperty,
 )
 

@@ -9,7 +9,7 @@ parameters:
     type: string
   - name: build_args
     type: object
-    default: {}    
+    default: {}
   - name: service_connection
     type: string
 
@@ -47,7 +47,7 @@ steps:
           arg_key="${env_var#BUILD_ARG_}"
           BUILD_ARGS+=(--build-arg "${arg_key}=${value}")
         done < <(env | awk -F= '/^BUILD_ARG_/ { print $0 }' | sort)
-        
+
         docker build -f ${{ parameters.dockerfile }} \
           "${BUILD_ARGS[@]}" \
           -t $registry/$imageDefinition \

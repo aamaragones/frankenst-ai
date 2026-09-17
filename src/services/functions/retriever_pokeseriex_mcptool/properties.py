@@ -1,7 +1,11 @@
-from core_examples.models.basetools.mcpfunctionstoolpropety import (
+from core_ai_examples.models.basetools.mcpfunctionstoolpropety import (
     MCPFunctionsToolProperty,
 )
 
 tool_properties = [
-    MCPFunctionsToolProperty("query", "string", "Question or query in natural language about the PokeSeriex database."),
+    MCPFunctionsToolProperty(
+        "query",
+        "string",
+        "Question or query in natural language about the PokeSeriex database.",
+    ),
 ]

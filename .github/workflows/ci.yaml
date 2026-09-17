@@ -1,30 +1,54 @@
+# Every step is a Makefile target so CI and `make ci` cannot drift. Called by
+# release.yaml on push to main, so each push runs the gates exactly once.
 name: ci
 
 on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
+  workflow_call: {}
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  tests:
-    name: tests
-    permissions:
-      contents: read
-    uses: ./.github/workflows/tests.yaml
+permissions:
+  contents: read
 
-  full-suite:
-    name: full suite (examples)
+jobs:
+  frankstate:
+    name: frankstate
     runs-on: ubuntu-latest
-    continue-on-error: true
-    permissions:
-      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+          cache-suffix: frankstate-${{ matrix.python-version }}
+
+      - name: Sync project with development dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Test the published slice with its coverage gate
+        run: make cov-frankstate
+
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -37,24 +61,45 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
+          version: "0.12.5"
           enable-cache: true
-          cache-suffix: full-suite
+          cache-suffix: quality
 
       - name: Sync project with examples and dev dependencies
         run: uv sync --frozen --extra examples --group dev
 
-      - name: Run the full repository test suite
-        run: uv run pytest -q
+      - name: YAML extension check
+        run: make yaml-check
+
+      - name: Lint
+        run: make lint
+
+      - name: Format check
+        run: make format-check
+
+      - name: Type check
+        run: make type
+
+      - name: Comment ratio
+        run: make comment-ratio
+
+      - name: Tests with coverage
+        run: make cov
+
+      - name: Build distributions
+        run: make build
+
+      - name: Pre-commit hooks
+        run: make pre-commit
 
   security:
-    name: security scan
+    name: security
     runs-on: ubuntu-latest
-    continue-on-error: true
-    permissions:
-      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -64,15 +109,14 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v8.1.0
         with:
+          version: "0.12.5"
           enable-cache: true
           cache-suffix: security
 
-      - name: Export locked runtime dependencies
-        run: uv export --frozen --no-dev --no-emit-project --output-file requirements.txt
+      - name: Audit locked runtime dependencies
+        run: make audit
 
-      - name: Audit dependencies (pip-audit)
-        run: uvx pip-audit --requirement requirements.txt
-
-      - name: Scan for leaked secrets (gitleaks)
+      - name: Scan for leaked secrets
         uses: gitleaks/gitleaks-action@v3
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -41,6 +41,7 @@ class BaseNode:
         self.name = name
         self.kwargs: dict[str, Any] = kwargs
 
+
 class SimpleNode(BaseNode):
     """Node wrapper for a StateEnhancer callable.
 
@@ -56,6 +57,7 @@ class SimpleNode(BaseNode):
     ):
         super().__init__(name, **kwargs)
         self.enhancer = enhancer
+
 
 class CommandNode(BaseNode):
     """Node wrapper for a StateCommander callable returning Command.
@@ -92,6 +94,7 @@ class CommandNode(BaseNode):
         """
         return tuple(self.commander.destinations.values())
 
+
 class ToolGraphNode(BaseNode):
     """Node wrapper for a native LangGraph `ToolNode`.
 
@@ -112,4 +115,3 @@ class ToolGraphNode(BaseNode):
             raise ValueError("ToolGraphNode requires a non-null 'tool_node'.")
         super().__init__(name or tool_node.name, **kwargs)
         self.tool_node = tool_node
-
