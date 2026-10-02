@@ -19,7 +19,7 @@ Read this before touching code. Architecture and the dependency rule live in
 | `src/core_ai_examples/`, `src/services/` | Reference and integration layers, not in the wheel. `tests/integration_test/test_wheel_contents.py` fails if they leak. Structural changes here are `chore(<layer>)`: any releasing type publishes an unchanged wheel |
 | `src/core_ai_examples/components/runnables/structured_grade_document/` | Branches on `getattr(model, "use_responses_api", False)`: `/v1/responses` rejects `response_format`, so it binds `text.format` and parses. Do not collapse the two routes |
 | `CHANGELOG.md`, `[project].version`, `uv.lock`'s `frankstate` entry | Written by semantic-release only. Anything added by hand to the changelog sinks to the bottom |
-| `.github/workflows/release.yaml`, environment `release` | Both names are bound to the PyPI trusted publisher. Renaming either breaks publishing without an error in this repo |
+| `.github/workflows/release.yaml`, environment `release` | Both names are bound to the PyPI trusted publisher. Renaming either breaks publishing without an error in this repo. The release commit is a direct push to `main`: any required status check on `main` rejects it (seen on 0.3.0) |
 | `.github/scripts/comment_ratio.py` | The `make comment-ratio` gate: `#` lines ≤ 15% of non-blank lines per file, docstrings excluded, `src/frankstate` report-only |
 
 ## Commands (the Makefile is the single interface)
@@ -67,10 +67,9 @@ python main.py --layout simple_oak
 | `config/settings.py` | `tests/unit_test/examples/config/test_core_settings.py`, `.env.example`, `tests/unit_test/examples/conftest.py`'s managed env list |
 | `pyproject.toml` dependencies | `uv.lock` (`uv lock`); the ranges in `docs/architecture.md`; an extra also means `Makefile` `install-*`, both syncs in `ci.yaml`, the `Dockerfile` and the extras table in `docs/examples.md` |
 | A tool's `*Property.name` | the lists in `config_nodes.yaml`, `SKILL.md`, `test_pokemon_tools.py` |
-| `ci.yaml` gains a job | the required checks in the `main` ruleset and the table in `docs/release.md` |
 | A layout's runtime needs | its `require(...)` call and `docs/examples.md`'s table |
 | A CI check | the Makefile target and `ci.yaml`, which calls it |
-| A job `name:` in `ci.yaml` | the required status checks in branch protection |
+| A job `name:` in `ci.yaml` | the runbook table in `docs/release.md`; `main` has no required checks, since they would reject the release commit |
 | `.releaserc` release rules | the type table in `docs/ways-of-working.md` and `docs/release.md` |
 | A new docs page | OKF v0.2 frontmatter (`type` + `generated: {by, at}`) and the table in `README.md` |
 
