@@ -4,6 +4,59 @@
      each release is prepended, so anything added by hand sinks to the
      bottom. The title above is kept in place by `changelogTitle`. -->
 
+## [0.3.0](https://github.com/aamaragones/frankenst-ai/compare/0.2.3...0.3.0) (2026-10-02)
+
+### ⚠ BREAKING CHANGES
+
+* **frankstate:** ** `checkpointer`, `input_schema` and `output_schema`
+are no longer `WorkflowBuilder` parameters of its own.
+`WorkflowBuilder(config, state_schema, **kwargs)` forwards to
+`StateGraph(...)` and `compile(**kwargs)` forwards to
+`StateGraph.compile(...)`, so `checkpointer` moves to
+`compile(checkpointer=...)`. Handler keyword arguments (`StateEnhancer`,
+`StateEvaluator`) must be declared by a class annotation on the
+subclass.
+
+## Changes
+
+- frankstate: `WorkflowBuilder` mirrors LangGraph's `StateGraph` and
+`compile` signatures through `**kwargs`;
+`RunnableBuilder.invoke/ainvoke/stream/astream` forward `**kwargs`;
+handler kwargs are a declared contract; pins widened to
+`langchain-core<2`, `langgraph<2`, `pydantic<3`.
+- deps: `databricks` and `mcp` extras declared as conflicting (`mcp<2`
+vs `mcp>=2`); lock upgraded (langgraph 1.2.12, langchain 1.4.3, FastMCP
+4); `langchain-mcp-adapters` removed; `azure-search-documents<12` and
+`azure-monitor-opentelemetry>=1.8.10` pinned with their reasons; `ci /
+mcp` job added.
+- examples: `interrupt(..., response_schema=HumanReviewDecision)` with
+typed request/decision models; tools declared by name in
+`config_nodes.yaml`; MCP server compiles the human-review graph with a
+checkpointer and returns the review question on a pause; secrets resolve
+env → `.env` → Key Vault only when named; notebooks migrated to
+`langchain.mcp.MCPAdapter` and `InMemorySaver`; legacy removed
+(`trials.ipynb`, unreferenced tool property, deprecated `endpoint`
+alias).
+
+## Checklist
+
+- [x] Conventional Commit title (`feat!` → minor release while 0.x)
+- [x] `make ci` green in the quality env; `make type test-mcp` green in
+the mcp env
+- [x] Tests added for every behaviour change
+- [x] Docs updated with OKF frontmatter (`generated.at` refreshed);
+`README-pypi.md` carries the migration note
+- [x] Comment lines ≤ 15% in every touched file
+- [x] `CHANGELOG.md` and `[project].version` untouched
+
+## After merge
+
+Add `ci / mcp` to the required status checks of the `main` ruleset.
+
+### Features
+
+* **frankstate:** WorkflowBuilder mirrors StateGraph and compile signatures through kwargs | chore(deps): split databricks and mcp extras, upgrade the lock, migrate the MCP client to langchain.mcp | chore(examples): typed human-review interrupt, tools declared in config_nodes, MCP server pauses on review ([#4](https://github.com/aamaragones/frankenst-ai/issues/4)) ([9bd64c6](https://github.com/aamaragones/frankenst-ai/commit/9bd64c667b640959ebc9f544a0582cff1b39c17d))
+
 ## [0.2.3](https://github.com/aamaragones/frankenst-ai/compare/0.2.2...0.2.3) (2026-09-17)
 
 ### Bug Fixes
