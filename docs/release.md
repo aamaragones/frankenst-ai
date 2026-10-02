@@ -47,7 +47,7 @@ committed with the release.
 | PyPI, project `frankstate` | Trusted publisher: owner `aamaragones`, repo `frankenst-ai`, workflow `release.yaml`, environment `release` | OIDC instead of a token. Renaming the workflow file or the environment breaks publishing silently |
 | GitHub, Environments | `release` exists; no required reviewers | A reviewer would block every automatic release |
 | GitHub, General | Squash merge only; squash title = **pull request title** | The default takes a single commit's message, which nobody validated |
-| GitHub, Branches | Protect `main` with **required status checks only**: `ci / frankstate (3.12)`, `(3.13)`, `(3.14)`, `ci / quality`, `ci / mcp`, `ci / security`, `pr-title / Validate title` | "Require a pull request" or "restrict pushes" rejects the release commit. If either is ever wanted, mint a GitHub App token in the `release` environment and add the app to the bypass list |
+| GitHub, Branches | Ruleset on `main` with **no required status checks**: only "restrict deletions" and "block force pushes" | Required checks apply to every push, including the `chore(release): X.Y.Z` commit semantic-release pushes with `GITHUB_TOKEN`, so they reject the release (`GH013 ... required status checks are expected`); in a personal repository the Actions app cannot be a bypass actor. The gate is the PR: CI runs there and `main` is squash-only. If enforcement is ever wanted, push the release commit with an owner PAT stored in the `release` environment and add the Admin role as bypass actor |
 | Local | `brew install node` | For the dry run below; nothing in the Python toolchain needs it |
 
 The job names above are the check names; renaming a job orphans its rule.
@@ -77,8 +77,8 @@ ignores them. Two PRs, in this order:
    from the notes.
 5. `gh workflow run release.yaml -f republish_tag=0.2.2` publishes the version that
    missed, so PyPI and the tags agree.
-6. Protect `main` with the required checks, picking their names from the run that just
-   completed rather than typing them.
+6. Add a ruleset on `main` that blocks deletion and force pushes, and nothing else:
+   required checks would reject the release commit (see the table above).
 
 `CHANGELOG.md` keeps the hand-written Keep a Changelog history below the generated
 entries; a marker line records where the format changed. It is never edited again.
