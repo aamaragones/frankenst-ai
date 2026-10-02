@@ -3,15 +3,18 @@ from typing import Any, cast
 from langchain_core.messages import AIMessage, AnyMessage
 from pydantic import BaseModel
 
+from core_ai_examples.components.retrievers.ai_search_multivector_retriever.ai_search_multivector_retriever import (
+    AISearchMultiVectorRetriever,
+)
 from frankstate.entity.statehandler import StateEnhancer
 
 
 class RetrieveContextAISearch(StateEnhancer):
     """Retrieve context from Azure AI Search using the current question.
 
-    The Azure Search retriever must be composed at layout runtime and injected
-    into this enhancer. This keeps node execution focused on state transforms
-    instead of infrastructure setup.
+    The layout composes the retriever and passes it as `retriever=`; the class
+    annotation below declares that keyword. This keeps node execution focused on
+    state transforms instead of infrastructure setup.
 
     Reads:
         - `messages` on the first retrieval pass
@@ -22,6 +25,8 @@ class RetrieveContextAISearch(StateEnhancer):
         - `question`: the question that should be used by downstream nodes
     """
 
+    retriever: AISearchMultiVectorRetriever
+
     async def enhance(
         self, state: list[AnyMessage] | dict[str, Any] | BaseModel
     ) -> dict[str, Any]:
@@ -31,14 +36,8 @@ class RetrieveContextAISearch(StateEnhancer):
             question = state["question"]
         else:
             last_message = cast(AIMessage, state["messages"][-1])
-            question = last_message.content
+            question = last_message.text
 
-        retriever = getattr(self, "retriever", None)
-        if retriever is None or not callable(getattr(retriever, "get_context", None)):
-            raise TypeError(
-                "RetrieveContextAISearch expects an injected retriever with a callable get_context(query)"
-            )
-
-        retrieved_docs_context = retriever.get_context(question)
+        retrieved_docs_context = self.retriever.get_context(question)
 
         return {"context": retrieved_docs_context, "question": question}

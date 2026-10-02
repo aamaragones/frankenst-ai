@@ -65,8 +65,8 @@ jobs:
           enable-cache: true
           cache-suffix: quality
 
-      - name: Sync project with examples and dev dependencies
-        run: uv sync --frozen --extra examples --group dev
+      - name: Sync the quality env (examples + databricks extras, dev group)
+        run: make install-dev
 
       - name: YAML extension check
         run: make yaml-check
@@ -91,6 +91,34 @@ jobs:
 
       - name: Pre-commit hooks
         run: make pre-commit
+
+  mcp:
+    name: mcp
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          version: "0.12.5"
+          enable-cache: true
+          cache-suffix: mcp
+
+      - name: Sync the mcp env (examples + mcp extras, dev group)
+        run: make install-mcp
+
+      - name: Type check against the real fastmcp and langchain.mcp
+        run: make type
+
+      - name: Whole suite without databricks, MCP tests included
+        run: make test-mcp
 
   security:
     name: security

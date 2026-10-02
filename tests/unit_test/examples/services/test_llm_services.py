@@ -123,7 +123,7 @@ def test_build_runtime_creates_one_client_per_launch_key(
         },
         "databricks": {
             "judge": {"model": "judge-endpoint"},
-            "fast_embeddings": {"model": "bge"},
+            "fast_embeddings": {"endpoint": "bge"},
         },
     }
 
@@ -133,7 +133,7 @@ def test_build_runtime_creates_one_client_per_launch_key(
     assert "judge" in runtime and "nope" not in runtime
     assert _kwargs(runtime.judge)["model"] == "judge-endpoint"
     assert databricks_chat.calls == [{"model": "judge-endpoint"}]
-    assert databricks_embeddings.calls == [{"model": "bge"}]
+    assert databricks_embeddings.calls == [{"endpoint": "bge"}]
     assert ollama_chat.calls and ollama_embeddings.calls
 
 
@@ -280,10 +280,10 @@ def test_build_runtime_resolves_nested_databricks_sections(
     assert _kwargs(runtime.embeddings) == {"endpoint": "embed-endpoint"}
 
 
-def test_databricks_requires_model_or_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_databricks_requires_model(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_provider_classes(monkeypatch, "_databricks_classes")
 
-    with pytest.raises(RuntimeError, match="must define model"):
+    with pytest.raises(RuntimeError, match="databricks.model.model"):
         LLMServices.build_runtime(
             {
                 "launch": {"model": "databricks"},
@@ -292,16 +292,16 @@ def test_databricks_requires_model_or_endpoint(monkeypatch: pytest.MonkeyPatch) 
         )
 
 
-def test_databricks_rejects_endpoint_and_model_together(
+def test_databricks_rejects_the_removed_endpoint_alias(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _patch_provider_classes(monkeypatch, "_databricks_classes")
 
-    with pytest.raises(RuntimeError, match="cannot define both endpoint and model"):
+    with pytest.raises(RuntimeError, match="deprecated that alias, declare `model`"):
         LLMServices.build_runtime(
             {
                 "launch": {"model": "databricks"},
-                "databricks": {"model": {"endpoint": "a", "model": "b"}},
+                "databricks": {"model": {"endpoint": "a"}},
             }
         )
 
@@ -443,3 +443,20 @@ def test_launch_reads_config_llms_from_settings(
     monkeypatch.setenv("FRANK_CORE_PACKAGE_PATH", str(tmp_path))
 
     assert LLMServices.launch().kinds == ("model",)
+
+
+def test_a_provider_whose_package_is_missing_names_the_launch_key(
+    monkeypatch: pytest.MonkeyPatch, raises_on_call: Callable[[BaseException], Any]
+) -> None:
+    monkeypatch.setattr(
+        LLMServices,
+        "_databricks_classes",
+        raises_on_call(ModuleNotFoundError("No module named 'databricks_langchain'")),
+    )
+
+    with pytest.raises(
+        RuntimeError, match="launch.judge selects databricks.*not installed"
+    ):
+        LLMServices.build_runtime(
+            {"launch": {"judge": "databricks"}, "databricks": {"judge": {"model": "m"}}}
+        )

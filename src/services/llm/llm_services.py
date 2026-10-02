@@ -197,25 +197,25 @@ class LLMServices:
     def _prepare_databricks_kwargs(
         cls, runtime_config: dict[str, Any], config_path: str
     ) -> dict[str, Any]:
-        """`model` names the endpoint; `endpoint` is the deprecated alias. Not both.
+        """Chat takes `model` (its deprecated `endpoint` alias is rejected); embeddings take `endpoint`.
 
         No credential is injected: the Databricks SDK default auth chain handles it.
         """
         kwargs = cls._resolve_runtime_kwargs(runtime_config)
-        endpoint, model = kwargs.get("endpoint"), kwargs.get("model")
-        if endpoint and model:
+        kind = config_path.rsplit(".", 1)[-1]
+        if _class_key(kind) == "chat" and "endpoint" in kwargs:
             raise RuntimeError(
-                f"Config section {config_path} cannot define both endpoint and model."
+                f"Config section {config_path} uses `endpoint`; databricks_langchain "
+                "deprecated that alias, declare `model` instead."
             )
-        if not (endpoint or model):
-            raise RuntimeError(
-                f"Config section {config_path} must define model "
-                "(or the deprecated endpoint alias)."
-            )
+        required = "endpoint" if _class_key(kind) == "embeddings" else "model"
+        if not kwargs.get(required):
+            raise RuntimeError(f"Missing config entry for: {config_path}.{required}")
         logger.info(
-            "Preparing Databricks runtime for %s: endpoint=%s use_responses_api=%s",
+            "Preparing Databricks runtime for %s: %s=%s use_responses_api=%s",
             config_path,
-            endpoint or model,
+            required,
+            kwargs[required],
             kwargs.get("use_responses_api"),
         )
         return kwargs
@@ -236,7 +236,15 @@ class LLMServices:
                 f"launch.{kind} selects {provider_name} but {config_path} is not declared."
             )
         kwargs = spec.prepare_kwargs(runtime_config, config_path)
-        runtime = spec.import_classes()[_class_key(kind)](**kwargs)
+        try:
+            classes = spec.import_classes()
+        except ImportError as exc:
+            raise RuntimeError(
+                f"launch.{kind} selects {provider_name}, but its package is not "
+                f"installed in this environment ({exc}). Sync the extra that carries "
+                "it, or point the launch key at an installed provider."
+            ) from exc
+        runtime = classes[_class_key(kind)](**kwargs)
         logger.info("Loaded %s from %s: %s.", kind, config_path, type(runtime).__name__)
         return runtime
 

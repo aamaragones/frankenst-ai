@@ -10,9 +10,9 @@ license = "MIT"
 readme = { file = "README-pypi.md", content-type = "text/markdown" }
 requires-python = ">=3.12.3"
 dependencies = [
-    "langchain-core>=1.6,<1.7",
-    "langgraph>=1.2,<1.4",
-    "pydantic>=2.13,<2.14",
+    "langchain-core>=1.6,<2",
+    "langgraph>=1.2,<2",
+    "pydantic>=2.13,<3",
 ]
 authors = [
     { name = "aamaragones", email = "aangel.maragones@outlook.com" }
@@ -28,28 +28,40 @@ keywords = ["LLM", "azure", "langgraph", "langchain", "azure-foundry", "unstruct
 
 [project.optional-dependencies]
 examples = [
-    "langchain",
+    "langchain>=1.4,<2",
+    "langgraph>=1.2.12",
     "PyYAML",
     "pydantic-settings",
     "requests",
     "azure-functions",
     "azure-keyvault-secrets",
     "azure-identity",
-    "azure-search-documents",
+    # 12.0 changed the model API (no SearchIndex.from_dict, no VectorizedQuery kind=);
+    # the AI Search demo cannot be validated against a service here, so it stays on 11.x.
+    "azure-search-documents>=11.6,<12",
     "azure-storage-blob",
     "langchain-azure-ai[opentelemetry]",
+    # Older releases pin an exporter that imports LogData, gone from opentelemetry-sdk 1.44,
+    # so the Azure tracer fails to import; 1.8.10 pins a matching exporter and sdk.
+    "azure-monitor-opentelemetry>=1.8.10",
     "langchain-ollama",
-    "databricks-langchain",
     "langchain-chroma",
     "langchain-classic",
-    "langchain-mcp-adapters",
-    "fastmcp",
     "Pillow",
     "tenacity",
     "unstructured[pdf]",
     "ipykernel",
     "ipywidgets",
     "matplotlib",
+]
+# `databricks` and `mcp` cannot share a venv: databricks-langchain's adapters pin mcp<2
+# and FastMCP 4 needs mcp>=2. `[tool.uv].conflicts` makes uv refuse the pair.
+databricks = [
+    "databricks-langchain>=0.20,<1",
+]
+mcp = [
+    "langchain[mcp]>=1.4,<2",
+    "fastmcp>=4,<5",
 ]
 
 [project.urls]
@@ -78,6 +90,7 @@ dev = [
 
 [tool.uv]
 default-groups = ["dev"]
+conflicts = [[{ extra = "databricks" }, { extra = "mcp" }]]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -128,7 +141,7 @@ warn_redundant_casts = true
 allow_redefinition = true
 
 [[tool.mypy.overrides]]
-module = ["langchain_azure_ai.*", "databricks_langchain.*", "IPython", "IPython.*"]
+module = ["langchain_azure_ai.*", "databricks_langchain.*", "fastmcp", "fastmcp.*", "langchain.mcp", "IPython", "IPython.*"]
 ignore_missing_imports = true
 
 # function_app.py is assembled inside the Functions container, where the blueprints
@@ -141,6 +154,11 @@ ignore_missing_imports = true
 module = ["services.functions.*"]
 disable_error_code = ["no-untyped-call"]
 
+# fastmcp is absent from the quality env (the `mcp` extra), so its decorators are Any there.
+[[tool.mypy.overrides]]
+module = ["services.mcp.*"]
+disable_error_code = ["untyped-decorator"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests/unit_test", "tests/integration_test"]
 pythonpath = ["src", ".", ".github/scripts"]
@@ -149,6 +167,7 @@ addopts = "-ra"
 markers = [
     "unit: fast Frankenst-AI contract tests",
     "integration: compiled workflows and packaging flows (wheel build)",
+    "mcp: needs the mcp extra (FastMCP 4 + langchain[mcp]); skipped elsewhere",
 ]
 
 [tool.coverage.run]

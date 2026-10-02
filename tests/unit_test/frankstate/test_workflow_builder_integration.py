@@ -1,9 +1,14 @@
 import asyncio
+from dataclasses import dataclass
 from typing import Any, cast
 
 import pytest
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.cache.memory import InMemoryCache
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START
+from langgraph.runtime import Runtime
+from langgraph.store.memory import InMemoryStore
 from langgraph.types import CachePolicy, RetryPolicy, TimeoutPolicy
 
 import frankstate
@@ -302,3 +307,103 @@ def test_workflow_builder_integrates_toolnode_with_frank_nodes() -> None:
 
     assert result["messages"][-1].content == "tool:PIKACHU"
     assert compiled.get_graph().nodes["summary_node"].metadata == {"tags": ["summary"]}
+
+
+@dataclass
+class GreetingContext:
+    greeting: str
+
+
+class RuntimeAwareLayout(GraphLayout):
+    """An enhancer that asks LangGraph for `runtime`, as any node callable may."""
+
+    def build_runtime(self) -> dict[str, object]:
+        return {}
+
+    def layout(self) -> None:
+        class ContextEnhancer(StateEnhancer):
+            def enhance(self, state: Any, runtime: Runtime[GreetingContext]) -> Any:
+                return {"messages": [AIMessage(content=runtime.context.greeting)]}
+
+        self.CTX_NODE = SimpleNode(enhancer=ContextEnhancer(), name="ctx_node")
+        self.START_EDGE = SimpleEdge(node_source=START, node_path=self.CTX_NODE.name)
+        self.END_EDGE = SimpleEdge(node_source=self.CTX_NODE.name, node_path=END)
+
+
+@pytest.mark.unit
+def test_workflow_builder_forwards_context_schema_and_nodes_receive_the_runtime() -> (
+    None
+):
+    builder = WorkflowBuilder(
+        config=RuntimeAwareLayout,
+        state_schema=FrankTestState,
+        context_schema=GreetingContext,
+    )
+
+    assert builder.workflow.context_schema is GreetingContext
+    result = builder.compile().invoke(
+        {"messages": [HumanMessage(content="hi")]},
+        context=GreetingContext(greeting="hello from runtime"),
+    )
+
+    assert result["messages"][-1].content == "hello from runtime"
+
+
+@pytest.mark.unit
+def test_workflow_builder_forwards_input_and_output_schemas() -> None:
+    builder = WorkflowBuilder(
+        config=LinearSyncLayout,
+        state_schema=FrankTestState,
+        input_schema=FrankTestState,
+        output_schema=FrankTestState,
+    )
+
+    assert builder.workflow.input_schema is FrankTestState
+    assert builder.workflow.output_schema is FrankTestState
+
+
+@pytest.mark.unit
+def test_workflow_builder_rejects_options_stategraph_would_swallow() -> None:
+    with pytest.raises(TypeError, match=r"\['config_schema'\].*context_schema"):
+        WorkflowBuilder(
+            config=LinearSyncLayout,
+            state_schema=FrankTestState,
+            config_schema=FrankTestState,
+        )
+
+
+@pytest.mark.unit
+def test_compile_forwards_checkpointer_and_interrupt_before_to_langgraph() -> None:
+    builder = WorkflowBuilder(config=LinearSyncLayout, state_schema=FrankTestState)
+    compiled = builder.compile(
+        checkpointer=InMemorySaver(), interrupt_before=["linear_sync_node"]
+    )
+    config = {"configurable": {"thread_id": "pause"}}
+
+    compiled.invoke({"messages": [HumanMessage(content="hi")]}, config)
+
+    assert compiled.get_state(config).next == ("linear_sync_node",)
+    assert compiled.invoke(None, config)["messages"][-1].content == (
+        "linear-sync-response"
+    )
+
+
+@pytest.mark.unit
+def test_compile_forwards_name_debug_store_and_cache() -> None:
+    builder = WorkflowBuilder(config=LinearSyncLayout, state_schema=FrankTestState)
+    store, cache = InMemoryStore(), InMemoryCache()
+
+    compiled = builder.compile(name="named", debug=True, store=store, cache=cache)
+
+    assert compiled.name == "named"
+    assert compiled.debug is True
+    assert compiled.store is store
+    assert compiled.cache is cache
+
+
+@pytest.mark.unit
+def test_compile_lets_langgraph_reject_an_unknown_option() -> None:
+    builder = WorkflowBuilder(config=LinearSyncLayout, state_schema=FrankTestState)
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'bogus'"):
+        builder.compile(bogus=1)

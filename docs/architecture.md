@@ -1,11 +1,11 @@
 ---
 type: Concept
 title: Architecture
-description: Repository layers and the dependency rule, the frankstate assembly lifecycle, entity contracts, the add_node kwargs seam, and the invariants the tests enforce.
+description: Repository layers and the dependency rule, the frankstate assembly lifecycle, entity contracts, the kwargs seam on nodes and on WorkflowBuilder, and the invariants the tests enforce.
 tags: [architecture, frankstate, langgraph, layers, contracts]
 generated:
     by: reference_agent
-    at: 2026-09-17T00:00:00Z
+    at: 2026-10-02T00:00:00Z
 ---
 
 # Architecture
@@ -52,7 +52,7 @@ never becomes an import bucket.
 
 ```
 src/frankstate/
-├── workflow_builder.py      WorkflowBuilder: compile(), to_mermaid(with_metadata=False)
+├── workflow_builder.py      WorkflowBuilder(config, state_schema, **StateGraph kwargs): compile(**compile kwargs), to_mermaid()
 ├── entity/
 │   ├── graph_layout.py      GraphLayout: build_runtime() then layout()
 │   ├── node.py              BaseNode, SimpleNode, CommandNode, ToolGraphNode
@@ -71,7 +71,8 @@ src/frankstate/
 
 `compile()` runs `get_nodes()` → `NodeManager.add_nodes()` → `StateGraph.add_node()`
 per node, then `get_edges()` → `EdgeManager` → `add_edge()` / `add_conditional_edges()`,
-then `StateGraph.compile(checkpointer)`. The result is a plain LangGraph graph.
+then `StateGraph.compile(**kwargs)` with whatever `compile()` received (`checkpointer`,
+`interrupt_before`, `store`, `cache`, `name`). The result is a plain LangGraph graph.
 
 A layout runs in two phases, each at most once per instance, so nothing happens at
 import time:
@@ -89,8 +90,8 @@ reorders the graph; renaming one changes nothing.
 
 | Contract | Wraps | Returns | LangGraph call |
 | --- | --- | --- | --- |
-| `StateEnhancer.enhance(state)` | a node callable | partial state update | `add_node()` |
-| `StateEvaluator.evaluate(state)` | a routing callable | routing key | `add_conditional_edges()` router |
+| `StateEnhancer.enhance(state)` | a node callable | partial state update or `Command` | `add_node()` |
+| `StateEvaluator.evaluate(state)` | a routing callable | routing key, a list of keys, or `Send`s | `add_conditional_edges()` router |
 | `StateCommander.command(state)` | routing + update | `Command` | node returning `Command` |
 
 `SimpleNode` resolves to `enhancer.enhance`, `CommandNode` to `commander.command` and
@@ -99,24 +100,44 @@ injects `destinations` from the commander for rendering, `ToolGraphNode` wraps a
 `ConditionalEdge(node_source, map_dict, evaluator)` is `add_conditional_edges()`.
 
 `RunnableBuilder` is the LCEL contract: implement `_configure_runnable()`, get a cached
-`runnable` with `invoke`/`ainvoke`/`stream`/`astream`. `PromptMixin` demands a
-`_build_prompt()` hook; `RetrieverMixin` builds a retriever lazily from a `vectordb` or
-takes a pre-built one.
+`runnable` with `invoke`/`ainvoke`/`stream`/`astream`, which forward `**kwargs` (such as
+`config=`) to the runnable. `PromptMixin` demands a `_build_prompt()` hook;
+`RetrieverMixin` builds a retriever lazily from a `vectordb` or takes a pre-built one.
+
+`StateEnhancer` and `StateEvaluator` take keyword arguments beyond `runnable_builder`
+and set them as attributes, so a layout configures a node (`retriever=`, `strict=True`)
+on the line that declares it. The subclass declares each accepted keyword with a class
+annotation, the same rule `GraphLayout` applies to its runtime keys; an undeclared name
+is a `TypeError` at the layout line instead of a missing attribute at the first run.
+
+Node callables are the bound `enhance`/`command`/`evaluate` methods, so LangGraph's
+injection by parameter name applies: a subclass that declares `runtime`, `config`,
+`writer` or `store` receives it. `ToolGraphNode` takes `langgraph.prebuilt.ToolNode`,
+the class's canonical home.
 
 ## The `kwargs` seam
 
-Node constructors accept native `add_node()` options (`metadata`, `retry_policy`,
+`frankstate` is an assembler, so it never names a LangGraph option itself. Node
+constructors accept native `add_node()` options (`metadata`, `retry_policy`,
 `cache_policy`, `timeout`, `defer`, `error_handler`) as `**kwargs` and forward them
 verbatim. `BaseNode.__init__` validates every key against `StateGraph.add_node()`'s
-signature at construction, so a typo raises `TypeError` at the layout line rather than
-being swallowed. New LangGraph per-node options therefore work without a core change;
-`test_workflow_builder_integration.py` asserts each policy reaches the compiled node spec.
+signature at construction, because the kwargs are stored and only reach `add_node()`
+inside `compile()`, far from the typo. `WorkflowBuilder(config, state_schema, **kwargs)`
+forwards to `StateGraph(...)` and validates the same way, for a different reason:
+`StateGraph.__init__` accepts `**kwargs` for its deprecated aliases and swallows an
+unknown name silently. `compile(**kwargs)` forwards to `StateGraph.compile(...)` without
+validating, since that signature has no catch-all and Python already raises at the
+call. New LangGraph options therefore work without a core change;
+`test_workflow_builder_integration.py` asserts each one reaches the compiled graph.
+Handler kwargs follow the same logic for the same reason: the value is read long after
+the line that passed it, so the check against the class annotations happens there.
 
 ## Runtime constraints
 
-Python `>=3.12.3`; `langchain-core>=1.6,<1.7`, `langgraph>=1.2,<1.4`,
-`pydantic>=2.13,<2.14`. Ranges, never `==`, because a library that pins exact versions
-cannot be installed next to anything else. The `examples` extra adds the providers and
+Python `>=3.12.3`; `langchain-core>=1.6,<2`, `langgraph>=1.2,<2`, `pydantic>=2.13,<3`.
+Major-bounded ranges, never `==`: the package introspects LangGraph signatures instead
+of hardcoding them, so a LangGraph minor does not need a `frankstate` release, and a
+library that pins exact versions cannot be installed next to anything else. The `examples` extra adds the providers and
 tooling the reference layer needs; it does not ship the reference code.
 
 ## Invariants
@@ -125,6 +146,6 @@ tooling the reference layer needs; it does not ship the reference code.
 2. The root exports only `WorkflowBuilder`.
 3. Layout declaration order is the topology; discovery is by type.
 4. `build_runtime()` and `layout()` run at most once per instance.
-5. Native `add_node()` options travel through node `**kwargs`, validated at construction.
+5. Native LangGraph options travel through `**kwargs`: `add_node()`'s on nodes, `StateGraph`'s and `compile()`'s on `WorkflowBuilder`.
 6. The build returns an official LangGraph graph; there is no second runtime.
 7. `config.settings` is the only entry point to configuration paths and secrets.

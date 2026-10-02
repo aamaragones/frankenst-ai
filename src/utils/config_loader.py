@@ -79,6 +79,17 @@ def read_yaml(path_to_yaml: str | Path | Traversable) -> dict[str, Any]:
         ) from exc
 
 
+_TOOL_NAME_LISTS = ("tools", "sensitive_tools")
+
+
+def _is_name_list(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and bool(value)
+        and all(isinstance(name, str) and name for name in value)
+    )
+
+
 def load_node_registry(
     path_to_yaml: str | Path | Traversable,
 ) -> dict[str, dict[str, Any]]:
@@ -119,6 +130,12 @@ def load_node_registry(
                 raise ValueError(
                     f"The node registry '{path_to_yaml}' must define 'metadata' as a mapping."
                 )
+            for key in _TOOL_NAME_LISTS:
+                if metadata and key in metadata and not _is_name_list(metadata[key]):
+                    raise ValueError(
+                        f"The node registry '{path_to_yaml}' node '{entry['id']}' must "
+                        f"define 'metadata.{key}' as a non-empty list of tool names."
+                    )
 
             destinations = entry.get("destinations")
             if destinations is not None:

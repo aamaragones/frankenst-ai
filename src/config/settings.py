@@ -1,9 +1,11 @@
 """Typed settings: the single entry point for configuration paths and secrets."""
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, overload
 
+from dotenv import dotenv_values
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic.fields import FieldInfo
 from pydantic_settings import (
@@ -20,15 +22,27 @@ def _default_core_package_path() -> Path:
 
 
 class DomainSettings(BaseSettings):
-    """Base for the nested settings domains: env, then .env."""
+    """Base for the nested settings domains: env, then the repository's `.env`.
+
+    The file is anchored to the repository root, not the working directory, so a
+    notebook kernel started in `research/` reads the same `.env` as `main.py`.
+    """
 
     model_config = SettingsConfigDict(
         extra="ignore",
-        env_file=".env",
+        env_file=str(_default_core_package_path().parent / ".env"),
         env_file_encoding="utf-8",
         env_ignore_empty=True,
         populate_by_name=True,
     )
+
+    @classmethod
+    def dotenv_value(cls, name: str) -> str | None:
+        """What `.env` gives `name`; pydantic only maps it onto declared fields."""
+        env_file = cls.model_config.get("env_file")
+        if not isinstance(env_file, str):
+            return None
+        return dotenv_values(env_file).get(name) or None
 
 
 class KeyVaultFallbackSettingsSource(PydanticBaseSettingsSource):
@@ -215,7 +229,9 @@ class CoreSettings(BaseSettings):
     def resolve_secret(self, name: str, *, required: Literal[False]) -> str | None: ...
 
     def resolve_secret(self, name: str, *, required: bool = True) -> str | None:
-        """Env first, then the Key Vault named by AZURE_KEY_VAULT_NAME."""
+        """Env, then `.env`, then Key Vault if AZURE_KEY_VAULT_NAME names one; the one door for any secret."""
+        if value := os.environ.get(name) or DomainSettings.dotenv_value(name):
+            return value
         vault = self.azure.key_vault_name
         if required:
             return get_secret(name, required=True, key_vault_name=vault)

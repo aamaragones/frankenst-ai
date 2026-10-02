@@ -48,7 +48,10 @@ class OakHumanLoopConfigGraph(GraphLayout):
         HumanReview -> (OakTools | OakLangAgent)
         OakTools -> OakLangAgent
 
-    Use this layout as the reference pattern for human-in-the-loop routing.
+    Tools are bound by the names `config_nodes.yaml` declares under
+    `OAKTOOLS_NODE.metadata.tools`; `HUMAN_REVIEW_NODE.metadata.sensitive_tools` names
+    the ones that pause for review. `HumanReview` calls `interrupt()`, so compile with
+    a checkpointer or the pause has nowhere to resume from.
     """
 
     CONFIG_NODES: dict[str, Any]
@@ -58,22 +61,27 @@ class OakHumanLoopConfigGraph(GraphLayout):
     def build_runtime(self) -> dict[str, Any]:
         settings = get_settings()
         (model,) = LLMServices.launch().require("low_model")
+        nodes = load_node_registry(settings.config_nodes_file_path)
 
-        dominate_pokemon_tool = DominatePokemonTool()
-        random_movements_tool = RandomMovementsTool()
-        get_evolution_tool = GetEvolutionTool()
-
+        available: dict[str, BaseTool] = {
+            tool.name: tool
+            for tool in (
+                GetEvolutionTool(),
+                RandomMovementsTool(),
+                DominatePokemonTool(),
+            )
+        }
+        tools = [
+            available[name] for name in nodes["OAKTOOLS_NODE"]["metadata"]["tools"]
+        ]
+        bound = {tool.name: tool for tool in tools}
         return {
-            "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
-            "OAKLANG_AGENT": OakLangAgent(
-                model=model,
-                tools=[
-                    get_evolution_tool,
-                    random_movements_tool,
-                    dominate_pokemon_tool,
-                ],
-            ),
-            "SENSITIVE_TOOLS": [dominate_pokemon_tool],
+            "CONFIG_NODES": nodes,
+            "OAKLANG_AGENT": OakLangAgent(model=model, tools=tools),
+            "SENSITIVE_TOOLS": [
+                bound[name]
+                for name in nodes["HUMAN_REVIEW_NODE"]["metadata"]["sensitive_tools"]
+            ],
         }
 
     def layout(self) -> None:

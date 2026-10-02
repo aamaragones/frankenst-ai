@@ -1,7 +1,8 @@
 """State handler contracts: evaluators, enhancers and commanders."""
 
+import inspect
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Hashable
 from typing import Any
 
 from langchain_core.messages import AnyMessage
@@ -12,7 +13,33 @@ from pydantic import BaseModel
 from frankstate.entity.runnable_builder import RunnableBuilder
 
 
-class StateEvaluator(ABC):
+class _ConfiguredHandler:
+    """A built runnable plus the keyword arguments the subclass declares by annotation."""
+
+    def __init__(
+        self,
+        runnable_builder: RunnableBuilder | None = None,
+        **kwargs: Any,
+    ):
+        self.runnable: Runnable[Any, Any] | None = (
+            runnable_builder.get() if runnable_builder else None
+        )
+        declared = {
+            name
+            for cls in type(self).__mro__
+            if cls is not object
+            for name in inspect.get_annotations(cls)
+        }
+        if unknown := kwargs.keys() - declared:
+            raise TypeError(
+                f"{type(self).__name__} does not declare {sorted(unknown)}; "
+                f"annotate them on the class. Declared: {sorted(declared)}."
+            )
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+
+
+class StateEvaluator(_ConfiguredHandler, ABC):
     """Base contract for conditional routing in a LangGraph StateGraph.
 
     Implementations receive the current graph state and must return a routing key
@@ -27,28 +54,20 @@ class StateEvaluator(ABC):
     Implementations may be synchronous (`def evaluate`) or asynchronous
     (`async def evaluate`) depending on whether they rely on `invoke()` or
     `ainvoke()` semantics from LangChain/LangGraph integrations.
+
+    Keyword arguments beyond `runnable_builder` become attributes, so a layout
+    configures the evaluator on the line that declares it; the subclass declares
+    each accepted name with a class annotation (`field: str`).
     """
-
-    def __init__(
-        self,
-        runnable_builder: RunnableBuilder | None = None,
-        **kwargs: Any,
-    ):
-        self.runnable: Runnable[Any, Any] | None = (
-            runnable_builder.get() if runnable_builder else None
-        )
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
     @abstractmethod
     def evaluate(
         self, state: list[AnyMessage] | dict[str, Any] | BaseModel
-    ) -> str | Awaitable[str]:
-        """Return the routing key used by a conditional edge path map.
+    ) -> Hashable | list[Hashable] | Awaitable[Hashable | list[Hashable]]:
+        """Return what `add_conditional_edges` accepts from its router.
 
-        The returned value must match one of the keys declared in the
-        `ConditionalEdge.map_dict` for the edge that uses this evaluator.
+        Usually a routing key declared in the `ConditionalEdge.map_dict`; a list of
+        keys fans out, and `Send` objects are hashable so they pass as well.
 
         Concrete evaluators may be implemented as synchronous (`def evaluate`)
         or asynchronous (`async def evaluate`) handlers depending on whether
@@ -57,7 +76,7 @@ class StateEvaluator(ABC):
         pass
 
 
-class StateEnhancer(ABC):
+class StateEnhancer(_ConfiguredHandler, ABC):
     """Base contract for node callables that return partial state updates.
 
     This wrapper keeps the project API stable while matching the official
@@ -71,30 +90,20 @@ class StateEnhancer(ABC):
     Implementations may be synchronous (`def enhance`) or asynchronous
     (`async def enhance`) depending on whether they call `invoke()` or
     `ainvoke()` on their runnable dependencies.
+
+    Keyword arguments beyond `runnable_builder` become attributes, so a layout
+    configures the enhancer on the line that declares it; the subclass declares
+    each accepted name with a class annotation (`retriever: MyRetriever`).
     """
-
-    def __init__(
-        self,
-        runnable_builder: RunnableBuilder | None = None,
-        **kwargs: Any,
-    ):
-
-        self.runnable: Runnable[Any, Any] | None = (
-            runnable_builder.get() if runnable_builder else None
-        )
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
     @abstractmethod
     def enhance(
         self, state: list[AnyMessage] | dict[str, Any] | BaseModel
-    ) -> dict[str, Any] | Awaitable[dict[str, Any]]:
-        """Return a partial state update produced by runnable or custom enhance logic.
+    ) -> dict[str, Any] | Command[Any] | Awaitable[dict[str, Any] | Command[Any]]:
+        """Return what a LangGraph node may return: a partial update or a `Command`.
 
-        The returned mapping is merged by LangGraph into the current state. The
-        exact keys must be compatible with the graph state schema used when the
-        workflow is compiled.
+        A mapping is merged by LangGraph into the current state and its keys must
+        fit the graph state schema; a `Command` also routes.
 
         Concrete enhancers may be implemented as synchronous (`def enhance`)
         or asynchronous (`async def enhance`) handlers depending on whether

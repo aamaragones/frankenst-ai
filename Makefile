@@ -14,7 +14,7 @@ COMMENT_RATIO_MAX ?= 0.15
 AUDIT_REQUIREMENTS := .audit-requirements.txt
 AUDIT_IGNORE :=
 
-.PHONY: help install install-dev lock format format-check lint type test test-frankstate cov cov-frankstate \
+.PHONY: help install install-dev install-mcp lock format format-check lint type test test-frankstate test-mcp cov cov-frankstate \
 	config comment-ratio yaml-check audit hooks pre-commit build release-prepare ci clean mcp-server \
 	function-app-build function-app-run function-app-stop function-app-logs \
 	docker-build docker-run docker-stop docker-prune docker-rebuild
@@ -25,8 +25,11 @@ help: ## Show every target
 install: ## Sync the venv with the locked runtime dependencies
 	uv sync --frozen
 
-install-dev: ## Sync the venv with the examples extra and the dev group
-	uv sync --frozen --extra examples --group dev
+install-dev: ## Sync the quality env: examples + databricks extras and the dev group
+	uv sync --frozen --extra examples --extra databricks --group dev
+
+install-mcp: ## Sync the mcp env: examples + mcp extras (FastMCP 4) and the dev group; excludes databricks
+	uv sync --frozen --extra examples --extra mcp --group dev
 
 lock: ## Refresh uv.lock from pyproject.toml
 	uv lock
@@ -49,6 +52,10 @@ test: ## Run every test
 
 test-frankstate: ## Run only the published slice's tests
 	uv run pytest -q $(FRANKSTATE_TESTS)
+
+test-mcp: ## In the mcp env: prove the extra is installed, then run the whole suite without databricks
+	uv run python -c "import fastmcp, langchain.mcp"
+	uv run pytest -q
 
 cov: ## Whole-tree coverage against [tool.coverage.report].fail_under
 	uv run pytest -q --cov --cov-report=term-missing
@@ -85,7 +92,7 @@ release-prepare: ## Set VERSION in pyproject + uv.lock and build dist (called by
 	uv version $(VERSION) --no-sync
 	$(MAKE) build
 
-ci: yaml-check lint format-check type comment-ratio cov cov-frankstate audit build pre-commit ## Everything CI runs, in CI order
+ci: yaml-check lint format-check type comment-ratio cov cov-frankstate audit build pre-commit ## Everything the quality job runs, in CI order (the mcp job: install-mcp type test-mcp)
 
 clean: ## Remove build, dist, cache and audit artifacts
 	rm -rf build dist .pytest_cache .ruff_cache .mypy_cache .coverage src/frankstate.egg-info $(AUDIT_REQUIREMENTS)

@@ -17,7 +17,8 @@ pip install frankstate            # the package only; API notes in README-pypi.m
 
 ```bash
 git clone https://github.com/aamaragones/frankenst-ai && cd frankenst-ai
-uv sync --frozen --extra examples --group dev   # the whole repository, with the examples
+make install-dev                                # the repository with the examples (+ databricks)
+make install-mcp                                # or with the MCP server and client (+ mcp) instead
 make help                                       # every target
 ```
 
@@ -30,7 +31,7 @@ Requires Python 3.12.3+ and `uv`. The examples run against Ollama by default; se
 | --- | --- | --- |
 | [architecture.md](docs/architecture.md) | Concept | Layers, the dependency rule, the `frankstate` assembly lifecycle, entity contracts and invariants |
 | [llm-services.md](docs/llm-services.md) | Concept | `config_llms.yaml` as the single provider entry point: one runtime per `launch` key, secrets through settings, `use_responses_api` |
-| [examples.md](docs/examples.md) | Guide | The four layouts, `python main.py --layout ...`, Ollama and Azure setup, logging, the Functions container |
+| [examples.md](docs/examples.md) | Guide | The four layouts, the `databricks` / `mcp` install profiles, tools declared in `config_nodes.yaml`, the human-in-the-loop pause, logging, the MCP and Functions services |
 | [ways-of-working.md](docs/ways-of-working.md) | Guide | `make ci`, Conventional Commits and what each type releases, the PR standard, the comment-ratio and OKF rules |
 | [release.md](docs/release.md) | Runbook | How a merge to `main` becomes a PyPI version, one-time settings, first release, recovery |
 
@@ -52,15 +53,15 @@ vulnerability reporting in [SECURITY.md](SECURITY.md); license in [LICENSE](LICE
 ```
 frankenst-ai/
 ├── main.py                       Render a layout: python main.py --layout simple_oak
-├── pyproject.toml                Package metadata, the `examples` extra, dependency groups, tool config
+├── pyproject.toml                Package metadata, the `examples`, `databricks` and `mcp` extras, tool config
 ├── Makefile                      The single command interface; CI calls only its targets
 ├── src/
 │   ├── frankstate/               The published wheel (entity/, managers/, workflow_builder.py)
 │   ├── config/                   settings.py, config_llms.yaml, config_nodes.yaml, config_logging.yaml,
 │   │   └── graph_layout/         the four reference GraphLayouts
 │   ├── utils/                    config loader, logger, secrets backend, blob storage, ollama/, rag/
-│   ├── core_ai_examples/         components/ (nodes, edges, runnables, tools, retrievers) and models/
-│   └── services/                 llm/ (LLMServices), mcp/ (server), functions/ (Azure Functions)
+│   ├── core_ai_examples/         components/ (nodes, edges, runnables, tools, retrievers) and models/ (stategraph, structured_output, interrupt)
+│   └── services/                 llm/ (LLMServices), mcp/ (FastMCP 4 server), functions/ (Azure Functions)
 ├── tests/                        unit_test/frankstate (the slice) and unit_test/examples (mirrors the rest); integration_test/ freezes the wheel
 ├── docs/                         OKF v0.2 pages, indexed above
 ├── research/                     Exploratory notebooks; not part of the suite
