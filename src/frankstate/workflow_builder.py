@@ -1,9 +1,9 @@
 """WorkflowBuilder: assembles a LangGraph StateGraph from a GraphLayout."""
 
+import inspect
 import logging
 from typing import Any
 
-from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -15,12 +15,13 @@ from frankstate.managers.node_manager import NodeManager
 class WorkflowBuilder:
     """Assemble a LangGraph `StateGraph` from a `GraphLayout` subclass.
 
-    The builder accepts a layout class that inherits from `GraphLayout`, plus
-    a state schema compatible with LangGraph and optional input, output and
-    checkpointing primitives. The public flow is:
+    The builder mirrors LangGraph's own surface instead of wrapping it: constructor
+    `**kwargs` go verbatim to `StateGraph(state_schema, **kwargs)` and `compile(**kwargs)`
+    goes verbatim to `StateGraph.compile(**kwargs)`, so a checkpointer, `interrupt_before`
+    or `context_schema` are passed exactly where LangGraph asks for them. The public flow:
 
     1. Instantiate the builder with a layout and a state schema.
-    2. Call `compile()`.
+    2. Call `compile(...)` with any `StateGraph.compile` option.
     3. Invoke the returned compiled graph from notebooks, services or apps.
     """
 
@@ -30,31 +31,35 @@ class WorkflowBuilder:
         self,
         config: type[GraphLayout],
         state_schema: type[Any],
-        checkpointer: BaseCheckpointSaver[Any] | None = None,
-        input_schema: type[Any] | None = None,
-        output_schema: type[Any] | None = None,
+        **kwargs: Any,
     ):
         """Create a workflow builder for a graph layout.
 
         Args:
             config: Layout class inheriting from `GraphLayout`.
             state_schema: LangGraph state schema used by `StateGraph`.
-            checkpointer: Optional LangGraph checkpoint saver.
-            input_schema: Optional input schema forwarded to `StateGraph`.
-            output_schema: Optional output schema forwarded to `StateGraph`.
+            **kwargs: Forwarded verbatim to `StateGraph`, such as `context_schema`,
+                `input_schema` or `output_schema`. `StateGraph` swallows unknown
+                names for its deprecated aliases, so they are rejected here instead.
         """
-        self.workflow: StateGraph[Any, Any, Any, Any] = StateGraph(
-            state_schema=state_schema,
-            input_schema=input_schema,
-            output_schema=output_schema,
-        )
-        self.memory: BaseCheckpointSaver[Any] | None = checkpointer
-
+        accepted = inspect.signature(StateGraph.__init__).parameters.keys() - {
+            "self",
+            "state_schema",
+            "kwargs",
+        }
+        if unsupported := kwargs.keys() - accepted:
+            raise TypeError(
+                f"Unsupported StateGraph option(s) {sorted(unsupported)}; "
+                f"supported: {sorted(accepted)}."
+            )
         if not isinstance(config, type) or not issubclass(config, GraphLayout):
             raise TypeError(
                 "WorkflowBuilder expects `config` to be a GraphLayout subclass"
             )
 
+        self.workflow: StateGraph[Any, Any, Any, Any] = StateGraph(
+            state_schema, **kwargs
+        )
         self.config: GraphLayout = config()
         self.edge_manager: EdgeManager = EdgeManager()
         self.node_manager: NodeManager = NodeManager()
@@ -65,10 +70,15 @@ class WorkflowBuilder:
             config.__name__,
         )
 
-    def compile(self) -> CompiledStateGraph[Any, Any, Any, Any]:
-        """Configure nodes and edges declared in the layout, then compile the graph."""
+    def compile(self, **kwargs: Any) -> CompiledStateGraph[Any, Any, Any, Any]:
+        """Assemble the layout once, then call `StateGraph.compile(**kwargs)` verbatim.
+
+        `checkpointer`, `interrupt_before`, `store`, `cache`, `name` and every other
+        compile option keep LangGraph's names; an unknown one raises LangGraph's own
+        `TypeError` at this call.
+        """
         self._ensure_workflow_configured()
-        return self.workflow.compile(checkpointer=self.memory)
+        return self.workflow.compile(**kwargs)
 
     def to_mermaid(self, with_metadata: bool = False) -> str:
         """Return the compiled graph as Mermaid text.

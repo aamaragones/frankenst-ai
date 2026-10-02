@@ -7,6 +7,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
 from config.graph_layout import simple_oak_config_graph as simple_oak_module
+from config.settings import get_settings
 from core_ai_examples.components.edges.evaluators.route_tool_condition import (
     RouteToolCondition,
 )
@@ -22,8 +23,13 @@ from frankstate.entity.edge import ConditionalEdge, SimpleEdge
 from frankstate.entity.node import SimpleNode, ToolGraphNode
 from services.llm.llm_services import LLMRuntime
 from tests.support.core_ai_examples_doubles import ToolBindingFakeModel
+from utils.config_loader import load_node_registry
 
 pytestmark = pytest.mark.unit
+
+
+def _registry() -> dict[str, dict[str, object]]:
+    return load_node_registry(get_settings().config_nodes_file_path)
 
 
 def _patch_simple_oak_runtime(
@@ -49,10 +55,8 @@ def test_simple_oak_config_graph_build_runtime_resolves_all_runtime_dependencies
     assert runtime["CONFIG_NODES"]["OAKTOOLS_NODE"]["name"] == "OakTools"
     assert isinstance(runtime["OAKLANG_AGENT"], OakLangAgent)
     assert runtime["OAKLANG_AGENT"].model is fake_model
-    assert [tool.name for tool in runtime["OAKLANG_AGENT"].tools] == [
-        "GetEvolutionTool",
-        "RandomMovementsTool",
-    ]
+    declared = _registry()["SIMPLE_OAKTOOLS_NODE"]["metadata"]
+    assert [tool.name for tool in runtime["OAKLANG_AGENT"].tools] == declared["tools"]  # type: ignore[index]
 
 
 def test_simple_oak_config_graph_declares_nodes_edges_and_runnable_builders(
@@ -69,16 +73,9 @@ def test_simple_oak_config_graph_declares_nodes_edges_and_runnable_builders(
     assert isinstance(nodes[0], SimpleNode)
     assert isinstance(nodes[0].enhancer, SimpleMessagesAsyncInvoke)
     assert isinstance(nodes[1], ToolGraphNode)
-    assert nodes[0].kwargs == {
-        "metadata": {
-            "description": "Main agent node. It binds tools and produces the next assistant message."
-        }
-    }
-    assert nodes[1].kwargs == {
-        "metadata": {
-            "description": "Tool node executed when the OakLangAgent node emits tool calls."
-        }
-    }
+    registry = _registry()
+    assert nodes[0].kwargs == {"metadata": registry["OAKLANG_NODE"]["metadata"]}
+    assert nodes[1].kwargs == {"metadata": registry["SIMPLE_OAKTOOLS_NODE"]["metadata"]}
 
     assert len(edges) == 3
     assert isinstance(edges[0], SimpleEdge)
@@ -113,6 +110,7 @@ def test_simple_oak_config_graph_compiles_and_runs_with_workflow_builder(
         "OakTools",
         "__end__",
     }
-    assert compiled.get_graph().nodes["OakLangAgent"].metadata == {
-        "description": "Main agent node. It binds tools and produces the next assistant message."
-    }
+    assert (
+        compiled.get_graph().nodes["OakLangAgent"].metadata
+        == _registry()["OAKLANG_NODE"]["metadata"]
+    )

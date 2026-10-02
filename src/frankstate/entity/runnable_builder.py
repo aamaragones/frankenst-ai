@@ -57,21 +57,21 @@ class RunnableBuilder(ABC):
         """The lazily initialized, cached runnable instance."""
         return self._require_runnable()
 
-    def invoke(self, input: Any) -> Any:
-        """Invoke the runnable synchronously."""
-        return self.runnable.invoke(input)
+    def invoke(self, input: Any, **kwargs: Any) -> Any:
+        """`Runnable.invoke(input, **kwargs)`; `config=` and the rest pass through."""
+        return self.runnable.invoke(input, **kwargs)
 
-    def ainvoke(self, input: Any) -> Awaitable[Any]:
-        """Invoke the runnable asynchronously."""
-        return self.runnable.ainvoke(input)
+    def ainvoke(self, input: Any, **kwargs: Any) -> Awaitable[Any]:
+        """`Runnable.ainvoke(input, **kwargs)`; `config=` and the rest pass through."""
+        return self.runnable.ainvoke(input, **kwargs)
 
-    def stream(self, input: Any) -> Iterator[Any]:
-        """Stream the runnable output chunks synchronously."""
-        return self.runnable.stream(input)
+    def stream(self, input: Any, **kwargs: Any) -> Iterator[Any]:
+        """`Runnable.stream(input, **kwargs)`; `config=` and the rest pass through."""
+        return self.runnable.stream(input, **kwargs)
 
-    def astream(self, input: Any) -> AsyncIterator[Any]:
-        """Stream the runnable output chunks asynchronously."""
-        return self.runnable.astream(input)
+    def astream(self, input: Any, **kwargs: Any) -> AsyncIterator[Any]:
+        """`Runnable.astream(input, **kwargs)`; `config=` and the rest pass through."""
+        return self.runnable.astream(input, **kwargs)
 
     def get(self) -> Runnable[Any, Any]:
         """Return the runnable, building it on first call."""

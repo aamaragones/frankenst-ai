@@ -23,7 +23,7 @@ jobs:
   - template: run-docker-tests.yaml
     parameters:
       capability: ${{ parameters.capability }}
-      uv_sync_args: '--group dev --extra examples'
+      uv_sync_args: '--group dev --extra examples --extra mcp'
       pytest_mark_expression: 'unit or integration'
 
   - job: BuildImage

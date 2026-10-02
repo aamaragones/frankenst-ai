@@ -1,13 +1,10 @@
-# Node registry consumed by layout dataclasses via load_node_registry().
-#
-# Schema overview:
-# - `id`:          registry key used in layouts (e.g. CONFIG_NODES["OAKLANG_NODE"]).
-# - `name`:        runtime name passed to LangGraph node constructors.
-# - `type`:        documentation-only role (`enhancer`, `tools`, `commander`).
-# - `metadata`:    dict forwarded verbatim to StateGraph.add_node(metadata=...).
-#                   Holds the node `description` and any other annotation.
-# - `destinations`: mapping used by StateCommander subclasses.
-#                   Values are the literal destination node names — no placeholders.
+# Node registry read by graph layouts through `utils.config_loader.load_node_registry`.
+# - `id`:           registry key used in layouts (CONFIG_NODES["OAKLANG_NODE"]).
+# - `name`:         runtime name passed to LangGraph node constructors.
+# - `type`:         documentation of the node kind the layout builds (enhancer | tools | commander).
+# - `metadata`:     forwarded verbatim to StateGraph.add_node(metadata=...). `tools` and
+#                   `sensitive_tools` list tool names; a name no tool carries fails build_runtime.
+# - `destinations`: literal destination node names read by StateCommander subclasses.
 
 nodes:
 
@@ -24,12 +21,21 @@ nodes:
     type: tools
     metadata:
       description: Tool node executed when the OakLangAgent node emits tool calls.
+      tools: [get_evolution, random_movements, dominate_pokemon]
+
+  - id: SIMPLE_OAKTOOLS_NODE
+    name: OakTools
+    type: tools
+    metadata:
+      description: Tool node of the simple layout, which has no review step and so binds no sensitive tool.
+      tools: [get_evolution, random_movements]
 
   - id: HUMAN_REVIEW_NODE
     name: HumanReview
     type: commander
     metadata:
       description: Command node that routes to tools or back to the enhancer after human review.
+      sensitive_tools: [dominate_pokemon]
     destinations:
       enhancer: OakLangAgent
       tools: OakTools

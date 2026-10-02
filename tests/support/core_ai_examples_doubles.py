@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from langchain_core.messages import AIMessage
+from langchain_core.messages.tool import ToolCall
 from langchain_core.runnables import Runnable, RunnableLambda
 
 
@@ -55,3 +56,26 @@ class FakeResponsesStructuredModel:
             return AIMessage(content=self.payload)
 
         return RunnableLambda(_respond)
+
+
+class ScriptedToolCallingModel:
+    """`bind_tools()` returns a runnable replaying `script` in order; the last repeats."""
+
+    def __init__(self, *script: AIMessage) -> None:
+        self.script = list(script)
+        self.bound_tools: list[Any] = []
+        self.calls = 0
+
+    def bind_tools(self, tools: Sequence[Any]) -> RunnableLambda[Any, AIMessage]:
+        self.bound_tools = list(tools)
+
+        def _next(_: Any) -> AIMessage:
+            message = self.script[min(self.calls, len(self.script) - 1)]
+            self.calls += 1
+            return message
+
+        return RunnableLambda(_next)
+
+
+def tool_call(name: str, args: dict[str, Any], call_id: str) -> ToolCall:
+    return {"name": name, "args": args, "id": call_id, "type": "tool_call"}

@@ -15,7 +15,7 @@ ENV PATH="/app/.venv/bin:/root/.local/bin:$PATH"
 
 COPY pyproject.toml uv.lock README-pypi.md LICENSE /app/
 COPY src /app/src
-RUN uv sync --frozen --no-dev --extra examples
+RUN uv sync --frozen --no-dev --extra examples --extra mcp
 
 EXPOSE 8000
 

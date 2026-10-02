@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+from typing import Any
 
 import pytest
 
@@ -11,6 +12,7 @@ from tests.support.frankstate_doubles.stub import (
     MissingDestinationsCommander,
     RoutingCommander,
     RunnableMessageEnhancer,
+    StaticMessageEnhancer,
     SyncRunnableMessageEnhancer,
 )
 
@@ -96,3 +98,39 @@ def test_state_commander_destinations_requires_property_or_backing_attr() -> Non
         AttributeError, match=r"must expose a 'destinations: dict\[str, str\]' property"
     ):
         _ = commander.destinations
+
+
+@pytest.mark.unit
+def test_handler_kwargs_must_be_declared_by_a_class_annotation() -> None:
+    with pytest.raises(
+        TypeError, match=r"does not declare \['marker2'\].*Declared: \['marker'\]"
+    ):
+        RunnableMessageEnhancer(marker2="typo")
+
+    with pytest.raises(
+        TypeError, match=r"StaticMessageEnhancer does not declare \['bogus'\]"
+    ):
+        StaticMessageEnhancer("x", bogus=1)
+
+
+@pytest.mark.unit
+def test_handler_kwargs_declared_on_a_parent_class_are_accepted() -> None:
+    class StrictFieldRouteEvaluator(FieldRouteEvaluator):
+        pass
+
+    evaluator = StrictFieldRouteEvaluator(field="decision", marker="inherited")
+
+    assert evaluator.marker == "inherited"
+
+
+@pytest.mark.unit
+def test_open_ended_options_are_declared_as_a_dict() -> None:
+    class ConfigurableEnhancer(StateEnhancer):
+        options: dict[str, Any]
+
+        def enhance(self, state: Any) -> dict[str, Any]:
+            return dict(self.options)
+
+    enhancer = ConfigurableEnhancer(options={"strict": True, "k": 3})
+
+    assert enhancer.enhance({}) == {"strict": True, "k": 3}

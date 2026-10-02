@@ -5,7 +5,7 @@ description: Provider-agnostic chat and embeddings runtimes (ollama, azure_ai, d
 tags: [llm-services, ollama, azure-ai, databricks, secrets, configuration, responses-api]
 generated:
     by: reference_agent
-    at: 2026-09-17T00:00:00Z
+    at: 2026-10-02T00:00:00Z
 ---
 
 # LLM Services
@@ -28,7 +28,7 @@ kwargs + {secret: NAME}    ──►    get_settings().resolve_secret()  ──�
                                   named by AZURE_KEY_VAULT_NAME         client with resolved kwargs
 ```
 
-Resolution is environment-first; the Key Vault lookup maps the name to kebab-case
+Resolution is env, then `.env`, then Key Vault only when `AZURE_KEY_VAULT_NAME` names one (otherwise a `LookupError` names the variable); the Key Vault lookup maps the name to kebab-case
 (`AZURE_INFERENCE_MODEL_NAME` → `azure-inference-model-name`). `utils.secrets` is the
 backend and only `config.settings` imports it: two readers of the same secret is how a
 value ends up different in two places.
@@ -65,7 +65,9 @@ LLMServices.get("model")                                     # RuntimeError befo
 
 Provider packages are imported inside each provider's importer (`_ollama_classes`,
 `_azure_ai_classes`, `_databricks_classes`), which runs only when a launch key selects
-that provider. An install may carry any subset of providers.
+that provider. An install may carry any subset of providers, and `launch()` builds every
+key at once, so `launch` must only name providers the current env installs; the extras
+and their one conflict are in [examples.md](examples.md).
 
 ## Providers
 
@@ -73,7 +75,7 @@ that provider. An install may carry any subset of providers.
 | --- | --- | --- | --- |
 | `ollama` | `ChatOllama` / `OllamaEmbeddings` | `model` required; `host` becomes `base_url` through the WSL proxy helper | none |
 | `azure_ai` | `AzureAIOpenAIApiChatModel` / `AzureAIOpenAIApiEmbeddingsModel` | exactly one of `endpoint`, `project_endpoint`; `model` required | `DefaultAzureCredential()` injected when the section declares none |
-| `databricks` | `ChatDatabricks` / `DatabricksEmbeddings` | `model` names the endpoint; `endpoint` is the deprecated alias, and both together is an error | none: the SDK default auth chain |
+| `databricks` | `ChatDatabricks` / `DatabricksEmbeddings` | chat: `model` names the serving endpoint and the `endpoint` alias `databricks_langchain` deprecated is rejected with the fix in the message; embeddings: `endpoint`, the class's own parameter | none: the SDK default auth chain |
 
 Everything beyond that table is validated by the provider package itself.
 
@@ -92,6 +94,7 @@ databricks:
 launch:
   model: ollama        # azure_ai | databricks
   embeddings: ollama
+  low_model: ollama    # databricks, in an env synced with --extra databricks
 ```
 
 `ollama` ships `gemma4:e4b-it-qat` and `embeddinggemma`; `azure_ai` reads

@@ -10,7 +10,7 @@ from typing import Any, NoReturn
 
 import pytest
 
-from config.settings import get_settings
+from config.settings import DomainSettings, get_settings
 from services.llm.llm_services import LLMRuntime, LLMServices
 
 _MANAGED_ENV = (
@@ -41,7 +41,9 @@ def _reset_process_caches() -> None:
 
 @pytest.fixture(autouse=True)
 def isolated_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[None]:
+    """Clean env, a `.env` that is the test's own, and no process-wide caches."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setitem(DomainSettings.model_config, "env_file", str(tmp_path / ".env"))
     for name in _MANAGED_ENV:
         monkeypatch.delenv(name, raising=False)
     _reset_process_caches()

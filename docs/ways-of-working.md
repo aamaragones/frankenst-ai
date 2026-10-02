@@ -5,7 +5,7 @@ description: Layers and what may import what, the Makefile as the single interfa
 tags: [ways-of-working, conventional-commits, pull-requests, ci, documentation]
 generated:
     by: reference_agent
-    at: 2026-09-17T00:00:00Z
+    at: 2026-10-02T00:00:00Z
 ---
 
 # Ways of Working
@@ -26,8 +26,11 @@ Every check has a `make` target and CI calls only those targets, so passing loca
 failing CI should not be possible. `make help` lists them.
 
 ```bash
-make ci              # everything CI runs, in CI order: yaml-check lint format-check type
-                     # comment-ratio cov cov-frankstate audit build pre-commit
+make install-dev     # the quality env (examples + databricks)
+make ci              # everything the quality job runs, in CI order: yaml-check lint
+                     # format-check type comment-ratio cov cov-frankstate audit build pre-commit
+make install-mcp     # the mcp env (examples + mcp); the two extras cannot share a venv
+make type test-mcp   # what the mcp job runs there
 make test-frankstate # the published slice only
 make hooks           # install pre-commit; make pre-commit runs every hook over the tree
 ```
@@ -38,6 +41,7 @@ make hooks           # install pre-commit; make pre-commit runs every hook over 
 | `type` | strict mypy over `src`, `tests/support`, `.github/scripts`, `main.py` |
 | `cov-frankstate` | the wheel's suite under 90% on Python 3.12, 3.13 and 3.14; this is the release gate |
 | `cov` | the whole tree above an explicit floor, ratcheted upward; a lower number beats hiding the untested Functions code with `omit` |
+| `test-mcp` | in the `mcp` env: the import probe fails when the extra is missing, then the whole suite runs without `databricks-langchain`, MCP server tests included |
 | `comment-ratio` | `#` comment lines above 15% of a file's non-blank lines (docstrings do not count); `src/frankstate` is reported, not failed |
 | `yaml-check` | any `.yml`: the house extension is `.yaml` |
 | `audit` | `pip-audit` over the locked runtime deps; an accepted advisory is listed in the Makefile with its reason |

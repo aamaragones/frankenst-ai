@@ -14,13 +14,10 @@ def _to_keyvault_name(name: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def _get_secret_client(key_vault_name: str | None = None) -> "SecretClient":
+def _get_secret_client(key_vault_name: str) -> "SecretClient":
     from azure.identity import DefaultAzureCredential
     from azure.keyvault.secrets import SecretClient
 
-    key_vault_name = key_vault_name or os.getenv("AZURE_KEY_VAULT_NAME")
-    if not key_vault_name:
-        raise OSError("AZURE_KEY_VAULT_NAME environment variable is not set")
     return SecretClient(
         vault_url=f"https://{key_vault_name}.vault.azure.net",
         credential=DefaultAzureCredential(),
@@ -47,11 +44,20 @@ def get_secret(
 ) -> str | None:
     """Return the env value under `secret_name`, else the vault's kebab-case twin.
 
-    `required=False` turns a missing vault secret into `None`; any other vault
+    Key Vault is consulted only when a vault is named; without one, a missing
+    secret is a `LookupError` that says where to set it, and nothing from Azure is
+    imported. `required=False` turns a missing secret into `None`; any other vault
     failure is a `RuntimeError` naming both spellings of the secret.
     """
     if secret_value := os.getenv(secret_name):
         return secret_value
+    if key_vault_name is None:
+        if not required:
+            return None
+        raise LookupError(
+            f"Secret '{secret_name}' is not set. Export it or add it to .env, or set "
+            "AZURE_KEY_VAULT_NAME to read it from Key Vault."
+        )
 
     from azure.core.exceptions import ResourceNotFoundError
 

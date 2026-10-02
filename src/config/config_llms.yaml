@@ -1,11 +1,14 @@
 # One runtime per `launch` key: `launch.<kind>: <provider>` plus `<provider>.<kind>`
 # holding the constructor kwargs. `{secret: NAME}` leaves resolve through settings
-# (env first, then Key Vault). `embeddings` or `*_embeddings` builds the provider's
+# (env, then .env, then Key Vault when AZURE_KEY_VAULT_NAME names one). `embeddings` or `*_embeddings` builds the provider's
 # embeddings class; any other name builds its chat class.
 
 ollama:
   model:
     model: gemma4:e4b-it-qat # qwen3.5:9b-q4_K_M
+    temperature: 0
+  low_model:
+    model: gemma4:e4b-it-qat
     temperature: 0
   embeddings:
     model: embeddinggemma
@@ -27,7 +30,6 @@ azure_ai:
 
 databricks:
   model:
-    # `model`, not the `endpoint` alias databricks_langchain deprecated.
     model:
       secret: DATABRICKS_LLM_ENDPOINT
     use_ai_gateway: true
@@ -46,7 +48,7 @@ databricks:
       secret: DATABRICKS_EMBEDDINGS_ENDPOINT
 
 launch:
-  model: ollama # azure_ai | databricks
+  model: databricks # azure_ai | databricks
   embeddings: ollama # azure_ai | databricks
   low_model: databricks
   # judge: databricks   # any name works: LLMServices.get("judge") / runtime.judge

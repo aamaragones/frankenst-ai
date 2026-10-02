@@ -14,7 +14,7 @@ It does not replace LangGraph and it does not introduce a separate runtime. The 
 
 The published package focuses on reusable workflow assembly contracts:
 
-- `WorkflowBuilder` to compile a graph from a layout class, and `to_mermaid()` to render it.
+- `WorkflowBuilder` to compile a graph from a layout class, and `to_mermaid()` to render it. Its constructor and `compile()` take LangGraph's own `StateGraph` and `StateGraph.compile` options as `**kwargs`.
 - `GraphLayout` to separate runtime dependency construction from graph declaration.
 - `SimpleNode`, `CommandNode`, `ToolGraphNode`, `SimpleEdge`, and `ConditionalEdge` to model graph structure.
 - `StateEnhancer`, `StateEvaluator`, and `StateCommander` to keep node and routing logic aligned with LangGraph concepts.
@@ -70,19 +70,32 @@ Repository-level reference code, service integrations, notebooks, and tests are 
 
 ```python
 from frankstate import WorkflowBuilder
+from langgraph.checkpoint.memory import InMemorySaver
 from my_project.layouts.simple_graph import SimpleGraphLayout
 from my_project.state import GraphState
 
 workflow_builder = WorkflowBuilder(
     config=SimpleGraphLayout,
-    state_schema=GraphState,
+    state_schema=GraphState,          # **kwargs go to StateGraph: context_schema, input_schema, output_schema
 )
 
-graph = workflow_builder.compile()
+graph = workflow_builder.compile(      # **kwargs go to StateGraph.compile
+    checkpointer=InMemorySaver(),
+    interrupt_before=["review"],
+)
 print(workflow_builder.to_mermaid())   # the topology as a Mermaid diagram
 ```
 
-`graph` is a native LangGraph `CompiledStateGraph`.
+`graph` is a native LangGraph `CompiledStateGraph`. `frankstate` adds no option of its
+own: anything `StateGraph(...)` or `StateGraph.compile(...)` accepts is passed by its
+LangGraph name, so a new LangGraph option works without a `frankstate` release. A name
+`StateGraph` would silently swallow (its deprecated aliases such as `config_schema`)
+raises `TypeError` at the constructor; `compile()` lets LangGraph raise its own.
+
+Migrating from 0.2: `checkpointer`, `input_schema` and `output_schema` are no longer
+constructor parameters of their own. `checkpointer` moves to `compile(checkpointer=...)`;
+the two schemas keep working as constructor `**kwargs`. Handler keyword arguments must now
+be declared by a class annotation on the handler subclass.
 
 ## LangGraph Alignment
 
@@ -93,6 +106,22 @@ print(workflow_builder.to_mermaid())   # the topology as a Mermaid diagram
 - `StateCommander` wraps nodes that return official LangGraph `Command` objects.
 
 The compiled graph still relies on LangGraph's own `StateGraph`, `add_node()`, `add_edge()`, `add_conditional_edges()`, and `Command`.
+
+Handlers are configured from the layout line. `StateEnhancer` and `StateEvaluator` take a
+`runnable_builder` plus keyword arguments that become attributes, and the subclass declares
+each accepted keyword with a class annotation; an undeclared name raises `TypeError` where
+the layout passed it, not at the first node run that reads a missing attribute.
+
+```python
+class RetrieveContext(StateEnhancer):
+    retriever: MyRetriever            # declares the `retriever=` keyword
+    strict: bool = False              # optional, with its default
+
+    async def enhance(self, state):
+        return {"context": self.retriever.get_context(state["question"])}
+
+RetrieveContext(retriever=my_retriever, strict=True)   # in the layout
+```
 
 ## Repository Boundaries
 

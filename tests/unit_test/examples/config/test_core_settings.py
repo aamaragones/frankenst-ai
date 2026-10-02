@@ -153,15 +153,10 @@ def test_azure_settings_can_fall_back_to_key_vault_for_telemetry_connection_stri
 
 
 def test_resolve_secret_prefers_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("AZURE_KEY_VAULT_NAME", "frankenst-kv")
     monkeypatch.setenv("MY_SECRET", "from-env")
-    monkeypatch.setattr(
-        settings_module,
-        "get_secret",
-        lambda name, *, required, key_vault_name: "env-only",
-    )
+    monkeypatch.setattr(settings_module, "get_secret", _never_called)
 
-    assert get_settings().resolve_secret("MY_SECRET") == "env-only"
+    assert get_settings().resolve_secret("MY_SECRET") == "from-env"
 
 
 def test_resolve_secret_passes_the_settings_vault_name(
@@ -195,3 +190,20 @@ def test_settings_have_no_empty_string_defaults() -> None:
             assert field.default != "", (
                 f"{candidate.__name__}.{field_name} defaults to ''"
             )
+
+
+def test_resolve_secret_reads_dot_env_before_any_vault(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    Path(".env").write_text("MY_SECRET=from-dotenv\n")
+    monkeypatch.setattr(settings_module, "get_secret", _never_called)
+
+    assert get_settings().resolve_secret("MY_SECRET") == "from-dotenv"
+
+
+def test_resolve_secret_without_a_vault_names_the_missing_variable() -> None:
+    with pytest.raises(
+        LookupError, match="'MY_SECRET' is not set.*AZURE_KEY_VAULT_NAME"
+    ):
+        get_settings().resolve_secret("MY_SECRET")
+    assert get_settings().resolve_secret("MY_SECRET", required=False) is None

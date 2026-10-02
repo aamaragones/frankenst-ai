@@ -84,6 +84,6 @@ def test_oaklang_agent_binds_tools_and_returns_model_response() -> None:
     assert isinstance(result, AIMessage)
     assert result.content == "oak-generated-response"
     assert [tool.name for tool in fake_model.bound_tools] == [
-        "GetEvolutionTool",
-        "RandomMovementsTool",
+        "get_evolution",
+        "random_movements",
     ]

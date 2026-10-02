@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from langchain_core.tools import BaseTool
 from langgraph.graph import END, START
 from langgraph.prebuilt import ToolNode
 
@@ -42,7 +43,9 @@ class SimpleOakConfigGraph(GraphLayout):
         OakTools -> OakLangAgent
 
     This layout is the simplest starting point when the graph only needs a tool
-    loop and does not require human review or retrieval-specific state.
+    loop and does not require human review or retrieval-specific state. Its tools
+    are the names `SIMPLE_OAKTOOLS_NODE.metadata.tools` declares, which never
+    include a sensitive one because nothing here reviews them.
     """
 
     CONFIG_NODES: dict[str, Any]
@@ -51,16 +54,18 @@ class SimpleOakConfigGraph(GraphLayout):
     def build_runtime(self) -> dict[str, Any]:
         settings = get_settings()
         (model,) = LLMServices.launch().require("model")
+        nodes = load_node_registry(settings.config_nodes_file_path)
 
-        get_evolution_tool = GetEvolutionTool()
-        random_movements_tool = RandomMovementsTool()
-
+        available: dict[str, BaseTool] = {
+            tool.name: tool for tool in (GetEvolutionTool(), RandomMovementsTool())
+        }
+        tools = [
+            available[name]
+            for name in nodes["SIMPLE_OAKTOOLS_NODE"]["metadata"]["tools"]
+        ]
         return {
-            "CONFIG_NODES": load_node_registry(settings.config_nodes_file_path),
-            "OAKLANG_AGENT": OakLangAgent(
-                model=model,
-                tools=[get_evolution_tool, random_movements_tool],
-            ),
+            "CONFIG_NODES": nodes,
+            "OAKLANG_AGENT": OakLangAgent(model=model, tools=tools),
         }
 
     def layout(self) -> None:
@@ -73,10 +78,10 @@ class SimpleOakConfigGraph(GraphLayout):
         self.OAKTOOLS_NODE = ToolGraphNode(
             tool_node=ToolNode(
                 tools=self.OAKLANG_AGENT.tools or [],
-                name=self.CONFIG_NODES["OAKTOOLS_NODE"]["name"],
+                name=self.CONFIG_NODES["SIMPLE_OAKTOOLS_NODE"]["name"],
             ),
-            name=self.CONFIG_NODES["OAKTOOLS_NODE"]["name"],
-            metadata=self.CONFIG_NODES["OAKTOOLS_NODE"]["metadata"],
+            name=self.CONFIG_NODES["SIMPLE_OAKTOOLS_NODE"]["name"],
+            metadata=self.CONFIG_NODES["SIMPLE_OAKTOOLS_NODE"]["metadata"],
         )
 
         ## EDGES

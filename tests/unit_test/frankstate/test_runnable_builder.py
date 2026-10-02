@@ -37,3 +37,21 @@ def test_runnable_builder_invoke_and_ainvoke_delegate_to_configured_runnable() -
         ("invoke", "payload"),
         ("ainvoke", "payload"),
     ]
+
+
+@pytest.mark.unit
+def test_runnable_builder_forwards_kwargs_such_as_config_to_the_runnable() -> None:
+    builder = FakeRunnableBuilder(
+        sync_result="sync-result", async_result="async-result"
+    )
+    config = {"configurable": {"thread_id": "t-1"}}
+
+    builder.invoke("payload", config=config)
+    asyncio.run(
+        cast(Coroutine[Any, Any, Any], builder.ainvoke("payload", config=config))
+    )
+
+    assert cast(SpyRunnable, builder.get()).kwargs == [
+        {"config": config},
+        {"config": config},
+    ]

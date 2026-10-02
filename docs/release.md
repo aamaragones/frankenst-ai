@@ -5,7 +5,7 @@ description: How a merge to main becomes a PyPI version through semantic-release
 tags: [release, semantic-release, pypi, github-actions, runbook]
 generated:
     by: reference_agent
-    at: 2026-09-17T00:00:00Z
+    at: 2026-10-02T00:00:00Z
 ---
 
 # Release
@@ -18,7 +18,7 @@ which one, and what its notes say. The commit types and what they cut are in
 ## What one run does
 
 ```
-push main ──▶ quality (ci.yaml: frankstate matrix, quality, security)
+push main ──▶ quality (ci.yaml: frankstate matrix, quality, mcp, security)
           ──▶ release  (environment: release)
                 npx semantic-release
                   1. analyse commits since tag X.Y.Z; stop here if nothing releases
@@ -47,7 +47,7 @@ committed with the release.
 | PyPI, project `frankstate` | Trusted publisher: owner `aamaragones`, repo `frankenst-ai`, workflow `release.yaml`, environment `release` | OIDC instead of a token. Renaming the workflow file or the environment breaks publishing silently |
 | GitHub, Environments | `release` exists; no required reviewers | A reviewer would block every automatic release |
 | GitHub, General | Squash merge only; squash title = **pull request title** | The default takes a single commit's message, which nobody validated |
-| GitHub, Branches | Protect `main` with **required status checks only**: `ci / frankstate (3.12)`, `(3.13)`, `(3.14)`, `ci / quality`, `ci / security`, `pr-title / Validate title` | "Require a pull request" or "restrict pushes" rejects the release commit. If either is ever wanted, mint a GitHub App token in the `release` environment and add the app to the bypass list |
+| GitHub, Branches | Protect `main` with **required status checks only**: `ci / frankstate (3.12)`, `(3.13)`, `(3.14)`, `ci / quality`, `ci / mcp`, `ci / security`, `pr-title / Validate title` | "Require a pull request" or "restrict pushes" rejects the release commit. If either is ever wanted, mint a GitHub App token in the `release` environment and add the app to the bypass list |
 | Local | `brew install node` | For the dry run below; nothing in the Python toolchain needs it |
 
 The job names above are the check names; renaming a job orphans its rule.
